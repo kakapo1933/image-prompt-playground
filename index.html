@@ -728,6 +728,7 @@
         <button class="btn btn-ghost" onclick="shareLink()" title="Share">🔗</button>
         <button class="btn btn-ghost" onclick="copyNegative()" data-i18n="copy-negative">Copy Negative</button>
         <button class="btn" onclick="copyPrompt()" data-i18n="copy-prompt">Copy Prompt</button>
+        <button class="btn" onclick="goGazia()" style="background:var(--green);color:#000;" data-i18n="go-gazia">Go Generate</button>
       </div>
     </div>
     <div class="output-text" id="output-text"></div>
@@ -1591,6 +1592,14 @@ function copyPrompt() {
   navigator.clipboard.writeText(text).then(function() { showToast('Copied!'); saveToHistory(); });
 }
 
+function goGazia() {
+  var text = buildPrompt();
+  navigator.clipboard.writeText(text).then(function() {
+    showToast(t('gazia-copied'));
+    window.open('https://gazia.ai', '_blank');
+  });
+}
+
 function copyNegative() {
   var neg = (state.negative && state.negative.trim()) || 'blurry, low quality, watermark, text, deformed';
   navigator.clipboard.writeText(neg).then(function() { showToast('Negative prompt copied!'); });
@@ -2061,6 +2070,8 @@ var I18N = {
   'char-long': { en: 'may be too long', zh: '可能過長' },
 
   // ── Preset Modes ──
+  'go-gazia': { en: 'Go Generate', zh: '去生圖' },
+  'gazia-copied': { en: 'Prompt copied! Paste it on Gazia.ai', zh: '已複製！到 Gazia.ai 貼上即可' },
   'preset-mode-all': { en: 'Apply All', zh: '全部套用' },
   'preset-mode-style': { en: 'Style Only', zh: '僅套用風格' },
 };
