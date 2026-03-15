@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Prompt Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e12;
+    --surface: #16161d;
+    --surface2: #1e1e28;
+    --surface3: #282836;
+    --border: #2a2a3a;
+    --text: #e0e0e8;
+    --text2: #8888a0;
+    --accent: #7c6aef;
+    --accent2: #a78bfa;
+    --accent-dim: rgba(124,106,239,0.15);
+    --green: #4ade80;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --cyan: #22d3ee;
+    --red: #f87171;
+    --radius: 10px;
+  }
+
+  [data-theme="light"] {
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --surface2: #f0f0f4;
+    --surface3: #e8e8ee;
+    --border: #d0d0dc;
+    --text: #1a1a2e;
+    --text2: #6b6b80;
+    --accent: #6b5bd4;
+    --accent2: #7c6aef;
+    --accent-dim: rgba(124,106,239,0.1);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Controls Panel ── */
+  .controls {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 20px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+  }
+
+  .panel-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lang-toggle {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .lang-toggle:hover { border-color: var(--accent); color: var(--text); }
+
+  .title-actions { display: flex; align-items: center; gap: 4px; }
+  .toolbar-btn {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    padding: 0; line-height: 1;
+  }
+  .toolbar-btn:hover { border-color: var(--accent); color: var(--text); }
+  .toolbar-btn:disabled { opacity: 0.3; cursor: default; }
+  .toolbar-btn:disabled:hover { border-color: var(--border); color: var(--text2); }
+
+  /* ── Presets ── */
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .preset-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--text); }
+  .preset-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+
+  /* ── Section ── */
+  .section {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .section-header {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+  .section-header:hover { color: var(--text); }
+  .section-header .arrow { transition: transform 0.2s; font-size: 10px; }
+  .section-header.collapsed .arrow { transform: rotate(-90deg); }
+  .section-body { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .section-body.hidden { display: none; }
+
+  /* ── Controls ── */
+  .control-row { display: flex; flex-direction: column; gap: 4px; }
+  .control-row label { font-size: 11px; color: var(--text2); font-weight: 500; }
+
+  input[type="text"], textarea {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+    resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+
+  select {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 7px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238888a0'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    width: 100%;
+  }
+  select:focus { border-color: var(--accent); }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--surface3);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-row input[type="range"] { flex: 1; }
+  .slider-val {
+    font-size: 11px;
+    color: var(--accent2);
+    min-width: 32px;
+    text-align: right;
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+
+  /* ── Slider Gradients ── */
+  input[type="range"]#temperature { background: linear-gradient(to right, #60a5fa, #e8e8e8 50%, #fb923c); }
+  input[type="range"]#saturation { background: linear-gradient(to right, #888, #ff6b6b, #ffd93d, #6bcb77, #4d96ff); }
+
+  /* ── Tags / Chips ── */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 4px 9px;
+    border-radius: 14px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+
+  /* ── Right Panel ── */
+  .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Preview ── */
+  .preview-area {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .prompt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 720px;
+    width: 100%;
+    line-height: 1.7;
+    font-size: 15px;
+    position: relative;
+  }
+
+  .tag-subject { color: var(--cyan); font-weight: 600; }
+  .tag-style { color: var(--accent2); }
+  .tag-mood { color: var(--pink); }
+  .tag-lighting { color: var(--orange); }
+  .tag-composition { color: var(--green); }
+  .tag-detail { color: var(--text2); }
+  .tag-quality { color: var(--red); }
+  .tag-sep { color: var(--text2); opacity: 0.4; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .aspect-badge {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 10px;
+    color: var(--text2);
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+
+  /* ── Prompt Output ── */
+  .output-area {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+  }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .output-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+  }
+  .output-actions { display: flex; gap: 6px; }
+
+  .btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { filter: brightness(1.15); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+  .output-text {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 6px;
+    text-align: right;
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+
+  /* ── Platform Params ── */
+  .platform-params {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .params-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .param-row { display: flex; flex-direction: column; gap: 4px; }
+  .param-row label { font-size: 11px; color: var(--text2); font-weight: 500; }
+
+  /* ── Export ── */
+  .export-wrapper { position: relative; display: inline-block; }
+  .export-dropdown {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 0;
+    min-width: 120px;
+    z-index: 30;
+    margin-bottom: 4px;
+  }
+  .export-option {
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .export-option:hover { background: var(--accent-dim); }
+
+  /* ── Palette Swatches ── */
+  .palette-swatch {
+    display: flex; gap: 4px; margin-top: 6px;
+  }
+  .swatch {
+    width: 100%; height: 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── History Panel ── */
+  .history-panel {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--surface);
+    z-index: 50;
+    padding: 20px;
+    overflow-y: auto;
+    display: none;
+  }
+  .history-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-panel-header span { font-size: 16px; font-weight: 700; color: var(--accent2); }
+  .history-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .history-text { font-size: 12px; color: var(--text); line-height: 1.5; margin-bottom: 6px; word-break: break-word; }
+  .history-time { font-size: 10px; color: var(--text2); margin-bottom: 6px; }
+  .history-actions { display: flex; gap: 6px; }
+  .history-empty { font-size: 13px; color: var(--text2); text-align: center; padding: 40px 0; }
+
+  /* ── Lock Button ── */
+  .section-header-right { display: flex; align-items: center; gap: 6px; }
+  .lock-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 12px; padding: 2px 4px; line-height: 1;
+    opacity: 0.4; transition: opacity 0.15s;
+  }
+  .lock-btn:hover { opacity: 0.8; }
+  .lock-btn.locked { opacity: 1; }
+
+  .copied-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--green);
+    color: #000;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .copied-toast.show { opacity: 1; transform: translateY(0); }
+
+  .platform-tabs { display: flex; gap: 4px; }
+  .platform-tab {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .platform-tab:hover { border-color: var(--accent); color: var(--text); }
+  .platform-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="panel-title">
+    <span id="panel-title-text" data-i18n="title">Image Prompt Generator</span>
+    <div class="title-actions">
+      <button class="toolbar-btn" id="undo-btn" onclick="undo()" title="Undo" disabled>↩</button>
+      <button class="toolbar-btn" id="redo-btn" onclick="redo()" title="Redo" disabled>↪</button>
+      <button class="toolbar-btn" id="randomize-btn" onclick="randomize()" title="Randomize">🎲</button>
+      <button class="toolbar-btn" id="history-btn" onclick="toggleHistoryPanel()" title="History">📋</button>
+      <button class="toolbar-btn" id="theme-toggle" onclick="toggleTheme()">☀️</button>
+      <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()">中文</button>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:500;" data-i18n="presets">PRESETS</div>
+    <div class="chip-group" id="preset-mode" style="margin-bottom:6px;"></div>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <!-- Subject -->
+  <div class="section">
+    <div class="section-header" data-lock="subject" onclick="toggleSection(this)"><span data-i18n="subject">Subject</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('subject',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body">
+      <div class="control-row">
+        <label data-i18n="main-subject">Main Subject</label>
+        <textarea id="subject" rows="2" data-i18n-placeholder="subject-placeholder" placeholder="e.g. a lone samurai standing on a cliff at sunset"></textarea>
+      </div>
+      <div class="chip-group" id="template-chips"></div>
+    </div>
+  </div>
+
+  <!-- Style -->
+  <div class="section">
+    <div class="section-header" data-lock="style" onclick="toggleSection(this)"><span data-i18n="art-style">Art Style</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('style',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body">
+      <div class="control-row"><label data-i18n="primary-style">Primary Style</label><select id="style"></select></div>
+      <div class="control-row"><label data-i18n="sub-style">Sub-style</label><select id="substyle"></select></div>
+      <div class="control-row"><label data-i18n="artist-ref">Artist / Reference (optional)</label><input type="text" id="artist" data-i18n-placeholder="artist-placeholder" placeholder="e.g. in the style of Studio Ghibli"></div>
+    </div>
+  </div>
+
+  <!-- Mood & Lighting -->
+  <div class="section">
+    <div class="section-header" data-lock="mood" onclick="toggleSection(this)"><span data-i18n="mood-lighting">Mood &amp; Lighting</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('mood',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body">
+      <div class="control-row"><label data-i18n="mood">Mood / Atmosphere</label><select id="mood"></select></div>
+      <div class="control-row"><label data-i18n="lighting">Lighting</label><select id="lighting"></select></div>
+      <div class="control-row"><label data-i18n="time-of-day">Time of Day</label><select id="timeofday"></select></div>
+    </div>
+  </div>
+
+  <!-- Composition -->
+  <div class="section">
+    <div class="section-header" data-lock="composition" onclick="toggleSection(this)"><span data-i18n="composition">Composition</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('composition',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body">
+      <div class="control-row"><label data-i18n="camera-angle">Camera Angle</label><select id="angle"></select></div>
+      <div class="control-row"><label data-i18n="framing">Framing</label><select id="framing"></select></div>
+      <div class="control-row"><label data-i18n="depth-of-field">Depth of Field</label><select id="dof"></select></div>
+    </div>
+  </div>
+
+  <!-- Color -->
+  <div class="section">
+    <div class="section-header" data-lock="color" onclick="toggleSection(this)"><span data-i18n="color">Color</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('color',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body">
+      <div class="control-row"><label data-i18n="color-palette">Color Palette</label><select id="palette"></select><div class="palette-swatch" id="palette-swatch"></div></div>
+      <div class="control-row">
+        <label data-i18n="color-temp">Color Temperature</label>
+        <div class="slider-row"><input type="range" id="temperature" min="0" max="100" value="50"><span class="slider-val" id="temperature-val">Neutral</span></div>
+      </div>
+      <div class="control-row">
+        <label data-i18n="saturation">Saturation</label>
+        <div class="slider-row"><input type="range" id="saturation" min="0" max="100" value="60"><span class="slider-val" id="saturation-val">60%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail & Quality -->
+  <div class="section">
+    <div class="section-header" data-lock="detail" onclick="toggleSection(this)"><span data-i18n="detail-quality">Detail &amp; Quality</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('detail',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body">
+      <div class="control-row">
+        <label data-i18n="detail-level">Detail Level</label>
+        <div class="slider-row"><input type="range" id="detail" min="1" max="5" value="3"><span class="slider-val" id="detail-val">Normal</span></div>
+      </div>
+      <div class="control-row"><label data-i18n="quality-mods">Quality Modifiers</label><div class="chip-group" id="quality-chips"></div></div>
+    </div>
+  </div>
+
+  <!-- Effects -->
+  <div class="section">
+    <div class="section-header collapsed" data-lock="effects" onclick="toggleSection(this)"><span data-i18n="effects-extras">Effects &amp; Extras</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('effects',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body hidden">
+      <div class="control-row"><label data-i18n="visual-effects">Visual Effects</label><div class="chip-group" id="effect-chips"></div></div>
+      <div class="control-row"><label data-i18n="texture">Texture</label><select id="texture"></select></div>
+    </div>
+  </div>
+
+  <!-- Output Settings -->
+  <div class="section">
+    <div class="section-header collapsed" data-lock="output" onclick="toggleSection(this)"><span data-i18n="output-settings">Output Settings</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('output',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body hidden">
+      <div class="control-row"><label data-i18n="aspect-ratio">Aspect Ratio</label><div class="chip-group" id="ratio-chips"></div></div>
+      <div class="control-row"><label data-i18n="negative-prompt">Negative Prompt (optional)</label><textarea id="negative" rows="2" data-i18n-placeholder="negative-placeholder" placeholder="e.g. blurry, low quality, watermark, text"></textarea></div>
+    </div>
+  </div>
+
+  <!-- History Panel Overlay -->
+  <div class="history-panel" id="history-panel">
+    <div class="history-panel-header">
+      <span data-i18n="history">History</span>
+      <button class="btn btn-ghost" onclick="toggleHistoryPanel()" style="font-size:11px;padding:3px 10px;">✕</button>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- Right Panel -->
+<div class="right-panel">
+  <div class="preview-area">
+    <div class="legend" id="legend"></div>
+    <div class="prompt-card">
+      <div class="aspect-badge" id="aspect-badge">1:1</div>
+      <div id="preview-content"></div>
+    </div>
+  </div>
+
+  <div class="output-area">
+    <div class="output-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="output-label" data-i18n="prompt-output">Prompt Output</span>
+        <div class="platform-tabs" id="platform-tabs"></div>
+      </div>
+      <div class="output-actions">
+        <div class="export-wrapper">
+          <button class="btn btn-ghost" onclick="toggleExportDropdown()" data-i18n="export">Export</button>
+          <div class="export-dropdown" id="export-dropdown" style="display:none;">
+            <div class="export-option" onclick="exportAs('json')">JSON</div>
+            <div class="export-option" onclick="exportAs('md')">Markdown</div>
+            <div class="export-option" onclick="exportAs('text')">Plain Text</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost" onclick="shareLink()" title="Share">🔗</button>
+        <button class="btn btn-ghost" onclick="copyNegative()" data-i18n="copy-negative">Copy Negative</button>
+        <button class="btn" onclick="copyPrompt()" data-i18n="copy-prompt">Copy Prompt</button>
+      </div>
+    </div>
+    <div class="output-text" id="output-text"></div>
+    <div class="char-count" id="char-count"></div>
+    <div class="platform-params" id="platform-params" style="display:none;"></div>
+  </div>
+</div>
+
+<div class="copied-toast" id="toast">Copied!</div>
+
+<script>
+// ═══════════ DATA ═══════════
+
+const STYLES = {
+  'Photorealistic': ['Natural', 'Studio Portrait', 'Fashion Editorial', 'Street Photography', 'Macro', 'Aerial Drone'],
+  'Digital Art': ['Concept Art', 'Matte Painting', 'Character Design', 'Environment Art', 'Sci-Fi', 'Fantasy'],
+  'Oil Painting': ['Classical', 'Impressionist', 'Expressionist', 'Renaissance', 'Baroque'],
+  'Watercolor': ['Traditional', 'Loose & Fluid', 'Botanical', 'Urban Sketch'],
+  'Anime / Manga': ['Modern Anime', 'Classic 90s Anime', 'Chibi', 'Seinen', 'Shojo'],
+  'Illustration': ['Flat Design', 'Editorial', "Children's Book", 'Retro', 'Vintage Poster'],
+  'Pixel Art': ['8-bit', '16-bit', 'Isometric', 'Modern Pixel'],
+  '3D Render': ['Blender Style', 'Unreal Engine', 'Clay Render', 'Low Poly', 'Voxel'],
+  'Pencil / Ink': ['Pencil Sketch', 'Ink Drawing', 'Cross-Hatching', 'Charcoal', 'Line Art'],
+  'Abstract': ['Geometric', 'Fluid', 'Minimalist', 'Surreal']
+};
+
+const MOODS = ['', 'Serene & Peaceful', 'Dreamy & Ethereal', 'Dark & Moody', 'Dramatic & Intense',
+  'Vibrant & Energetic', 'Nostalgic & Warm', 'Mysterious & Enigmatic', 'Whimsical & Playful',
+  'Melancholic', 'Epic & Grand', 'Cozy & Intimate', 'Eerie & Unsettling', 'Romantic'];
+
+const LIGHTING = ['', 'Golden Hour', 'Blue Hour', 'Soft Diffused', 'Hard Directional',
+  'Rim / Backlighting', 'Neon / Cyberpunk', 'Moonlight', 'Candlelight', 'Studio Three-Point',
+  'Volumetric God Rays', 'Bioluminescent', 'Overcast Flat', 'Chiaroscuro', 'Under Dramatic Clouds'];
+
+const TIMEOFDAY = ['', 'Dawn', 'Morning', 'Noon', 'Afternoon', 'Golden Hour', 'Dusk / Twilight', 'Night', 'Midnight'];
+
+const ANGLES = ['', 'Eye Level', 'Low Angle (Hero Shot)', 'High Angle', "Bird's Eye / Top-Down",
+  "Worm's Eye", 'Dutch Angle / Tilted', 'Over-the-Shoulder', 'First Person POV'];
+
+const FRAMINGS = ['', 'Extreme Close-Up', 'Close-Up', 'Medium Shot', 'Full Body',
+  'Wide Shot', 'Ultra-Wide / Panoramic', 'Symmetrical / Centered', 'Rule of Thirds', 'Frame Within Frame'];
+
+const DOFS = ['', 'Shallow (Bokeh)', 'Medium', 'Deep / Everything Sharp', 'Tilt-Shift Miniature'];
+
+const PALETTES = ['', 'Warm Earth Tones', 'Cool Blues & Teals', 'Pastel', 'Neon / Cyberpunk',
+  'Monochrome', 'Sepia / Vintage', 'Complementary Contrast', 'Analogous Harmony',
+  'Desaturated / Muted', 'Jewel Tones', 'Black & White', 'Candy / Pop'];
+
+const TEXTURES = ['', 'Smooth / Clean', 'Grainy / Film Grain', 'Painterly Brush Strokes',
+  'Paper / Canvas', 'Metallic / Chrome', 'Glitch / Digital Artifacts', 'Fabric / Textile'];
+
+const QUALITY_MODS = ['masterpiece', 'best quality', '4K', '8K UHD', 'highly detailed',
+  'sharp focus', 'professional', 'award-winning', 'trending on ArtStation'];
+
+const EFFECTS = ['bokeh', 'lens flare', 'fog / mist', 'particles / dust',
+  'rain', 'snow', 'reflections', 'motion blur', 'light rays',
+  'chromatic aberration', 'film grain', 'double exposure', 'glitch effect',
+  'sparkles', 'smoke'];
+
+const RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:2', '2:3', '3:4', '21:9'];
+
+const PLATFORMS = ['General', 'Midjourney', 'DALL-E', 'Stable Diffusion'];
+
+const PRESETS = {
+  'Cinematic Portrait': {
+    subject: 'a mysterious woman with silver hair, wearing a flowing dark cloak',
+    style: 'Photorealistic', substyle: 'Fashion Editorial',
+    mood: 'Dramatic & Intense', lighting: 'Rim / Backlighting', timeofday: 'Dusk / Twilight',
+    angle: 'Eye Level', framing: 'Close-Up', dof: 'Shallow (Bokeh)',
+    palette: 'Cool Blues & Teals', temperature: 35, saturation: 55, detail: 4,
+    quality: ['masterpiece', 'best quality', '8K UHD', 'sharp focus'],
+    effects: ['bokeh', 'fog / mist', 'light rays'], texture: '', ratio: '2:3', artist: '',
+    negative: 'blurry, low quality, watermark, text, deformed'
+  },
+  'Dreamy Landscape': {
+    subject: 'a hidden valley with floating islands, waterfalls cascading into clouds below',
+    style: 'Digital Art', substyle: 'Matte Painting',
+    mood: 'Dreamy & Ethereal', lighting: 'Golden Hour', timeofday: 'Golden Hour',
+    angle: 'High Angle', framing: 'Ultra-Wide / Panoramic', dof: 'Deep / Everything Sharp',
+    palette: 'Pastel', temperature: 65, saturation: 70, detail: 5,
+    quality: ['masterpiece', 'highly detailed', '4K', 'trending on ArtStation'],
+    effects: ['fog / mist', 'light rays', 'particles / dust'], texture: '', ratio: '16:9', artist: '',
+    negative: 'blurry, dark, ugly, watermark'
+  },
+  'Anime Character': {
+    subject: 'a determined young mage holding a glowing staff, wind blowing through her hair',
+    style: 'Anime / Manga', substyle: 'Modern Anime',
+    mood: 'Epic & Grand', lighting: 'Volumetric God Rays', timeofday: '',
+    angle: 'Low Angle (Hero Shot)', framing: 'Medium Shot', dof: '',
+    palette: 'Jewel Tones', temperature: 50, saturation: 75, detail: 4,
+    quality: ['masterpiece', 'best quality', 'highly detailed', 'sharp focus'],
+    effects: ['sparkles', 'particles / dust', 'light rays'], texture: '', ratio: '3:4', artist: '',
+    negative: 'bad anatomy, bad hands, blurry, low quality'
+  },
+  'Product Photo': {
+    subject: 'a minimalist ceramic coffee mug on a marble surface with morning light',
+    style: 'Photorealistic', substyle: 'Studio Portrait',
+    mood: 'Serene & Peaceful', lighting: 'Soft Diffused', timeofday: 'Morning',
+    angle: 'Eye Level', framing: 'Close-Up', dof: 'Shallow (Bokeh)',
+    palette: 'Warm Earth Tones', temperature: 60, saturation: 40, detail: 4,
+    quality: ['professional', 'sharp focus', '4K', 'best quality'],
+    effects: ['reflections'], texture: 'Smooth / Clean', ratio: '1:1', artist: '',
+    negative: 'blurry, cluttered, dark, noisy'
+  },
+  'Fantasy Epic': {
+    subject: 'an ancient dragon perched on a crumbling Gothic cathedral, lightning in the sky',
+    style: 'Digital Art', substyle: 'Fantasy',
+    mood: 'Dark & Moody', lighting: 'Under Dramatic Clouds', timeofday: 'Night',
+    angle: 'Low Angle (Hero Shot)', framing: 'Wide Shot', dof: 'Deep / Everything Sharp',
+    palette: 'Complementary Contrast', temperature: 30, saturation: 65, detail: 5,
+    quality: ['masterpiece', '8K UHD', 'highly detailed', 'award-winning'],
+    effects: ['fog / mist', 'light rays', 'rain'], texture: '', ratio: '16:9', artist: '',
+    negative: 'cartoon, childish, blurry, watermark'
+  }
+};
+
+// ═══════════ STATE ═══════════
+
+const DEFAULTS = {
+  subject: '', style: 'Photorealistic', substyle: 'Natural',
+  mood: '', lighting: '', timeofday: '', angle: '', framing: '', dof: '',
+  palette: '', temperature: 50, saturation: 60, detail: 3,
+  quality: [], effects: [], texture: '', ratio: '1:1',
+  artist: '', negative: '', platform: 'General',
+  mjQ: 1, mjSeed: '', mjStyle: '', mjVersion: '6.1',
+  sdSteps: 30, sdCfg: 7, sdSampler: 'Euler a',
+  dalleSize: '1024x1024'
+};
+
+const state = { ...DEFAULTS, quality: [], effects: [] };
+
+// ═══════════ UNDO / REDO ═══════════
+
+var undoStack = [];
+var redoStack = [];
+var MAX_UNDO = 20;
+
+function cloneState() {
+  var c = {};
+  Object.keys(state).forEach(function(k) {
+    c[k] = Array.isArray(state[k]) ? state[k].slice() : state[k];
+  });
+  return c;
+}
+
+function pushUndoState() {
+  undoStack.push(cloneState());
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack = [];
+  updateUndoRedoButtons();
+}
+
+function restoreState(snapshot) {
+  Object.keys(snapshot).forEach(function(k) {
+    state[k] = Array.isArray(snapshot[k]) ? snapshot[k].slice() : snapshot[k];
+  });
+  syncUIFromState();
+  updateAll();
+  updateUndoRedoButtons();
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(cloneState());
+  restoreState(undoStack.pop());
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(cloneState());
+  restoreState(redoStack.pop());
+}
+
+function updateUndoRedoButtons() {
+  var u = document.getElementById('undo-btn');
+  var r = document.getElementById('redo-btn');
+  if (u) u.disabled = !undoStack.length;
+  if (r) r.disabled = !redoStack.length;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) { e.preventDefault(); redo(); }
+});
+
+// ═══════════ THEME ═══════════
+
+function toggleTheme() {
+  var html = document.documentElement;
+  var next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('ipg-theme', next);
+  updateThemeButton();
+}
+
+function updateThemeButton() {
+  var btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
+}
+
+function initTheme() {
+  var saved = localStorage.getItem('ipg-theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+  updateThemeButton();
+}
+
+// ═══════════ LOCKS ═══════════
+
+var locks = { subject:false, style:false, mood:false, composition:false, color:false, detail:false, effects:false, output:false };
+
+function toggleLock(key, btn) {
+  locks[key] = !locks[key];
+  btn.textContent = locks[key] ? '🔒' : '🔓';
+  btn.classList.toggle('locked', locks[key]);
+}
+
+// ═══════════ RANDOMIZE ═══════════
+
+var RANDOM_SUBJECTS = [
+  'a lone astronaut floating above a neon-lit city',
+  'an ancient library with books flying through the air',
+  'a cat wearing a tiny spacesuit on the moon',
+  'a crystal dragon emerging from a frozen lake',
+  'a cyberpunk street vendor selling glowing ramen',
+  'a giant tree growing through an abandoned skyscraper',
+  'a fox spirit dancing in a bamboo forest at twilight',
+  'a steampunk clock tower surrounded by flying ships',
+  'a mermaid sitting on a rock watching a sunset over the ocean',
+  'a warrior monk meditating on top of a mountain in the clouds',
+  'a vintage train traveling through a field of sunflowers',
+  'a robot painter creating art in a gallery',
+  'a witch brewing potions in a cozy cottage kitchen',
+  'a samurai standing in cherry blossom rain',
+  'a phoenix rising from volcanic flames at dawn'
+];
+
+function randFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function randomize() {
+  pushUndoState();
+  if (!locks.subject) state.subject = randFrom(RANDOM_SUBJECTS);
+  if (!locks.style) {
+    var styles = Object.keys(STYLES);
+    state.style = randFrom(styles);
+    state.substyle = randFrom(STYLES[state.style]);
+    state.artist = '';
+  }
+  if (!locks.mood) state.mood = randFrom(MOODS);
+  if (!locks.mood) {
+    state.lighting = randFrom(LIGHTING);
+    state.timeofday = randFrom(TIMEOFDAY);
+  }
+  if (!locks.composition) {
+    state.angle = randFrom(ANGLES);
+    state.framing = randFrom(FRAMINGS);
+    state.dof = randFrom(DOFS);
+  }
+  if (!locks.color) {
+    state.palette = randFrom(PALETTES);
+    state.temperature = Math.floor(Math.random() * 101);
+    state.saturation = Math.floor(Math.random() * 101);
+  }
+  if (!locks.detail) {
+    state.detail = Math.floor(Math.random() * 5) + 1;
+    var shuffled = QUALITY_MODS.slice().sort(function() { return 0.5 - Math.random(); });
+    state.quality = shuffled.slice(0, Math.floor(Math.random() * 4) + 1);
+  }
+  if (!locks.effects) {
+    var se = EFFECTS.slice().sort(function() { return 0.5 - Math.random(); });
+    state.effects = se.slice(0, Math.floor(Math.random() * 4));
+    state.texture = randFrom(TEXTURES);
+  }
+  if (!locks.output) state.ratio = randFrom(RATIOS);
+  syncUIFromState();
+  updateAll();
+}
+
+// ═══════════ HISTORY ═══════════
+
+var HISTORY_KEY = 'ipg-history';
+var MAX_HISTORY = 20;
+var historySaveTimer = null;
+
+function saveToHistory() {
+  var entry = { state: cloneState(), prompt: buildPrompt(), timestamp: Date.now() };
+  var history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  history.unshift(entry);
+  if (history.length > MAX_HISTORY) history.pop();
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function debouncedHistorySave() {
+  if (historySaveTimer) clearTimeout(historySaveTimer);
+  historySaveTimer = setTimeout(saveToHistory, 3000);
+}
+
+function getHistory() { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+
+function loadFromHistory(index) {
+  var history = getHistory();
+  if (!history[index]) return;
+  pushUndoState();
+  var s = history[index].state;
+  Object.keys(s).forEach(function(k) {
+    state[k] = Array.isArray(s[k]) ? s[k].slice() : s[k];
+  });
+  syncUIFromState();
+  updateAll();
+  toggleHistoryPanel();
+}
+
+function deleteFromHistory(index) {
+  var history = getHistory();
+  history.splice(index, 1);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderHistoryPanel();
+}
+
+function timeAgo(ts) {
+  var diff = Date.now() - ts;
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1) return currentLang === 'zh' ? '剛才' : 'just now';
+  if (mins < 60) return mins + (currentLang === 'zh' ? ' 分鐘前' : 'm ago');
+  var hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + (currentLang === 'zh' ? ' 小時前' : 'h ago');
+  return Math.floor(hours / 24) + (currentLang === 'zh' ? ' 天前' : 'd ago');
+}
+
+function renderHistoryPanel() {
+  var list = document.getElementById('history-list');
+  list.textContent = '';
+  var history = getHistory();
+  if (!history.length) {
+    var empty = document.createElement('div');
+    empty.className = 'history-empty';
+    empty.textContent = t('history-empty');
+    list.appendChild(empty);
+    return;
+  }
+  history.forEach(function(entry, i) {
+    var item = document.createElement('div');
+    item.className = 'history-item';
+    var text = document.createElement('div');
+    text.className = 'history-text';
+    text.textContent = entry.prompt.substring(0, 80) + (entry.prompt.length > 80 ? '...' : '');
+    var time = document.createElement('div');
+    time.className = 'history-time';
+    time.textContent = timeAgo(entry.timestamp);
+    var actions = document.createElement('div');
+    actions.className = 'history-actions';
+    var loadBtn = document.createElement('button');
+    loadBtn.className = 'btn btn-ghost';
+    loadBtn.style.cssText = 'font-size:11px;padding:3px 8px';
+    loadBtn.textContent = t('history-load');
+    loadBtn.addEventListener('click', (function(idx) { return function() { loadFromHistory(idx); }; })(i));
+    var delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-ghost';
+    delBtn.style.cssText = 'font-size:11px;padding:3px 8px;color:var(--red)';
+    delBtn.textContent = t('history-delete');
+    delBtn.addEventListener('click', (function(idx) { return function() { deleteFromHistory(idx); }; })(i));
+    actions.appendChild(loadBtn);
+    actions.appendChild(delBtn);
+    item.appendChild(text);
+    item.appendChild(time);
+    item.appendChild(actions);
+    list.appendChild(item);
+  });
+}
+
+function toggleHistoryPanel() {
+  var panel = document.getElementById('history-panel');
+  var isHidden = panel.style.display === 'none' || !panel.style.display;
+  if (isHidden) { renderHistoryPanel(); panel.style.display = 'block'; }
+  else { panel.style.display = 'none'; }
+}
+
+// ═══════════ SUBJECT TEMPLATES ═══════════
+
+var SUBJECT_TEMPLATES = [
+  { key: 'tpl-person', text: 'a mysterious figure in a dark cloak standing in the rain' },
+  { key: 'tpl-landscape', text: 'a breathtaking mountain valley with a river winding through it' },
+  { key: 'tpl-still-life', text: 'an elegant arrangement of vintage books, candles, and dried flowers' },
+  { key: 'tpl-architecture', text: 'a grand Gothic cathedral with intricate stone carvings' },
+  { key: 'tpl-animal', text: 'a majestic wolf howling at the full moon on a snowy ridge' },
+  { key: 'tpl-scene', text: 'a bustling night market with lanterns and street food stalls' },
+  { key: 'tpl-food', text: 'a beautifully plated gourmet dish with fresh ingredients' },
+  { key: 'tpl-vehicle', text: 'a vintage steam locomotive crossing a bridge over a misty gorge' }
+];
+
+function buildTemplateChips() {
+  var container = document.getElementById('template-chips');
+  container.textContent = '';
+  SUBJECT_TEMPLATES.forEach(function(tpl) {
+    var chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = t(tpl.key);
+    chip.addEventListener('click', function() {
+      pushUndoState();
+      state.subject = tpl.text;
+      document.getElementById('subject').value = tpl.text;
+      updateAll();
+    });
+    container.appendChild(chip);
+  });
+}
+
+// ═══════════ PRESET MODES ═══════════
+
+var presetMode = 'all'; // 'all' or 'style'
+
+function buildPresetMode() {
+  var container = document.getElementById('preset-mode');
+  container.textContent = '';
+  ['all', 'style'].forEach(function(mode) {
+    var chip = document.createElement('span');
+    chip.className = 'chip' + (presetMode === mode ? ' active' : '');
+    chip.textContent = t('preset-mode-' + mode);
+    chip.addEventListener('click', function() {
+      presetMode = mode;
+      container.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+    });
+    container.appendChild(chip);
+  });
+}
+
+// ═══════════ SAFE DOM HELPERS ═══════════
+
+// Safe text escaping: creates a text node, never parses HTML from user input
+function safeSpan(className, text) {
+  const span = document.createElement('span');
+  span.className = className;
+  span.textContent = text;
+  return span;
+}
+
+function safeSep() {
+  const span = document.createElement('span');
+  span.className = 'tag-sep';
+  span.textContent = ', ';
+  return span;
+}
+
+// ═══════════ INIT ═══════════
+
+function init() {
+  populateSelect('style', Object.keys(STYLES));
+  populateSubstyles();
+  populateSelect('mood', MOODS);
+  populateSelect('lighting', LIGHTING);
+  populateSelect('timeofday', TIMEOFDAY);
+  populateSelect('angle', ANGLES);
+  populateSelect('framing', FRAMINGS);
+  populateSelect('dof', DOFS);
+  populateSelect('palette', PALETTES);
+  populateSelect('texture', TEXTURES);
+
+  buildChips('quality-chips', QUALITY_MODS, 'quality');
+  buildChips('effect-chips', EFFECTS, 'effects');
+  buildChips('ratio-chips', RATIOS, 'ratio', true);
+  buildPresetMode();
+  buildPresets();
+  buildPlatformTabs();
+  buildLegend();
+  buildTemplateChips();
+
+  bindInput('subject', 'textarea');
+  bindInput('style', 'select', function() { populateSubstyles(); updateAll(); });
+  bindInput('substyle', 'select');
+  bindInput('artist', 'text');
+  bindInput('mood', 'select');
+  bindInput('lighting', 'select');
+  bindInput('timeofday', 'select');
+  bindInput('angle', 'select');
+  bindInput('framing', 'select');
+  bindInput('dof', 'select');
+  bindInput('palette', 'select');
+  bindInput('texture', 'select');
+  bindInput('negative', 'textarea');
+
+  bindSlider('temperature', function(v) {
+    if (v < 30) return t('slider-cool');
+    if (v < 45) return t('slider-sl-cool');
+    if (v < 55) return t('slider-neutral');
+    if (v < 70) return t('slider-sl-warm');
+    return t('slider-warm');
+  });
+  bindSlider('saturation', function(v) { return v + '%'; });
+  bindSlider('detail', function(v) {
+    var keys = ['', 'slider-minimal', 'slider-simple', 'slider-normal', 'slider-detailed', 'slider-ultra'];
+    return t(keys[v]);
+  });
+
+  updateAll();
+}
+
+// ═══════════ HELPERS ═══════════
+
+function populateSelect(id, options) {
+  var sel = document.getElementById(id);
+  sel.textContent = '';
+  options.forEach(function(o) {
+    var opt = document.createElement('option');
+    opt.value = o;
+    if (!o) {
+      opt.textContent = t('none');
+    } else {
+      var key = 'opt-' + o;
+      opt.textContent = (I18N[key]) ? t(key) : o;
+    }
+    sel.appendChild(opt);
+  });
+}
+
+function populateSubstyles() {
+  var style = document.getElementById('style').value || state.style;
+  var subs = STYLES[style] || ['Default'];
+  populateSelect('substyle', subs);
+  if (subs.indexOf(state.substyle) < 0) state.substyle = subs[0];
+}
+
+function buildChips(containerId, items, stateKey, isSingle) {
+  var container = document.getElementById(containerId);
+  container.textContent = '';
+  items.forEach(function(item) {
+    var chip = document.createElement('span');
+    chip.className = 'chip';
+    var chipKey = 'chip-' + item;
+    chip.textContent = (I18N[chipKey]) ? t(chipKey) : item;
+    if (isSingle && state[stateKey] === item) chip.classList.add('active');
+    if (!isSingle && state[stateKey].indexOf(item) >= 0) chip.classList.add('active');
+
+    chip.addEventListener('click', function() {
+      pushUndoState();
+      if (isSingle) {
+        state[stateKey] = item;
+        container.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+        chip.classList.add('active');
+      } else {
+        var idx = state[stateKey].indexOf(item);
+        if (idx >= 0) { state[stateKey].splice(idx, 1); chip.classList.remove('active'); }
+        else { state[stateKey].push(item); chip.classList.add('active'); }
+      }
+      updateAll();
+    });
+    container.appendChild(chip);
+  });
+}
+
+function buildPresets() {
+  var container = document.getElementById('presets');
+  container.textContent = '';
+  Object.keys(PRESETS).forEach(function(name) {
+    var btn = document.createElement('span');
+    btn.className = 'preset-btn';
+    btn.textContent = t('preset-' + name);
+    btn.setAttribute('data-preset', name);
+    btn.addEventListener('click', function() {
+      pushUndoState();
+      var p = PRESETS[name];
+      Object.keys(p).forEach(function(k) {
+        if (presetMode === 'style' && (k === 'subject' || k === 'negative')) return;
+        if (Array.isArray(p[k])) state[k] = p[k].slice();
+        else state[k] = p[k];
+      });
+      syncUIFromState();
+      container.querySelectorAll('.preset-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      updateAll();
+    });
+    container.appendChild(btn);
+  });
+}
+
+function buildPlatformTabs() {
+  var container = document.getElementById('platform-tabs');
+  PLATFORMS.forEach(function(p) {
+    var tab = document.createElement('span');
+    tab.className = 'platform-tab' + (p === state.platform ? ' active' : '');
+    tab.textContent = p;
+    tab.addEventListener('click', function() {
+      state.platform = p;
+      container.querySelectorAll('.platform-tab').forEach(function(t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      updateAll();
+    });
+    container.appendChild(tab);
+  });
+}
+
+function buildLegend() {
+  var items = [
+    { key: 'legend-subject', color: 'var(--cyan)' },
+    { key: 'legend-style', color: 'var(--accent2)' },
+    { key: 'legend-mood', color: 'var(--pink)' },
+    { key: 'legend-lighting', color: 'var(--orange)' },
+    { key: 'legend-composition', color: 'var(--green)' },
+    { key: 'legend-quality', color: 'var(--red)' }
+  ];
+  var container = document.getElementById('legend');
+  items.forEach(function(i) {
+    var el = document.createElement('span');
+    el.className = 'legend-item';
+    var dot = document.createElement('span');
+    dot.className = 'legend-dot';
+    dot.style.background = i.color;
+    el.appendChild(dot);
+    el.appendChild(document.createTextNode(t(i.key)));
+    container.appendChild(el);
+  });
+}
+
+function bindInput(id, type, extra) {
+  var el = document.getElementById(id);
+  if (type === 'textarea' || type === 'text') {
+    el.addEventListener('focus', function() { pushUndoState(); });
+    el.addEventListener('input', function() {
+      state[id] = el.value;
+      if (extra) extra();
+      else updateAll();
+    });
+  } else {
+    el.addEventListener('change', function() {
+      pushUndoState();
+      state[id] = el.value;
+      if (extra) extra();
+      else updateAll();
+    });
+  }
+}
+
+function bindSlider(id, formatter) {
+  var el = document.getElementById(id);
+  var valEl = document.getElementById(id + '-val');
+  var undoPushed = false;
+  el.addEventListener('input', function() {
+    if (!undoPushed) { pushUndoState(); undoPushed = true; }
+    state[id] = parseInt(el.value);
+    valEl.textContent = formatter(state[id]);
+    updateAll();
+  });
+  el.addEventListener('change', function() { undoPushed = false; });
+  valEl.textContent = formatter(parseInt(el.value));
+}
+
+function syncUIFromState() {
+  ['subject', 'artist', 'negative'].forEach(function(id) { document.getElementById(id).value = state[id]; });
+  document.getElementById('style').value = state.style;
+  populateSubstyles();
+  document.getElementById('substyle').value = state.substyle;
+  ['mood', 'lighting', 'timeofday', 'angle', 'framing', 'dof', 'palette', 'texture'].forEach(function(id) {
+    document.getElementById(id).value = state[id];
+  });
+  ['temperature', 'saturation', 'detail'].forEach(function(id) {
+    document.getElementById(id).value = state[id];
+    document.getElementById(id).dispatchEvent(new Event('input'));
+  });
+  buildChips('quality-chips', QUALITY_MODS, 'quality');
+  buildChips('effect-chips', EFFECTS, 'effects');
+  buildChips('ratio-chips', RATIOS, 'ratio', true);
+}
+
+function toggleSection(header) {
+  header.classList.toggle('collapsed');
+  var body = header.nextElementSibling;
+  body.classList.toggle('hidden');
+}
+
+// ═══════════ RENDER ═══════════
+
+function updateAll() {
+  renderPreview();
+  updatePrompt();
+  renderPlatformParams();
+  renderPaletteSwatch();
+  debouncedHistorySave();
+}
+
+function renderPreview() {
+  var container = document.getElementById('preview-content');
+  container.textContent = ''; // clear safely
+
+  // Subject
+  if (state.subject) {
+    container.appendChild(safeSpan('tag-subject', state.subject));
+  } else {
+    var placeholder = safeSpan('tag-subject', t('preview-placeholder'));
+    placeholder.style.opacity = '0.3';
+    container.appendChild(placeholder);
+  }
+
+  // Style
+  var styleParts = [];
+  if (state.style) styleParts.push(state.style.toLowerCase());
+  if (state.substyle && state.substyle !== (STYLES[state.style] || [])[0]) {
+    styleParts.push(state.substyle.toLowerCase());
+  }
+  if (state.artist) styleParts.push(state.artist);
+  if (styleParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-style', styleParts.join(', ')));
+  }
+
+  // Mood
+  if (state.mood) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-mood', state.mood.toLowerCase()));
+  }
+
+  // Lighting + time
+  var lightParts = [];
+  if (state.lighting) lightParts.push(state.lighting.toLowerCase() + ' lighting');
+  if (state.timeofday) lightParts.push(state.timeofday.toLowerCase());
+  if (lightParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-lighting', lightParts.join(', ')));
+  }
+
+  // Composition
+  var compParts = [];
+  if (state.angle) compParts.push(state.angle.toLowerCase());
+  if (state.framing) compParts.push(state.framing.toLowerCase());
+  if (state.dof) compParts.push(state.dof.toLowerCase());
+  if (compParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-composition', compParts.join(', ')));
+  }
+
+  // Color
+  var colorParts = [];
+  if (state.palette) colorParts.push(state.palette.toLowerCase() + ' palette');
+  if (state.temperature < 35) colorParts.push('cool tones');
+  else if (state.temperature > 65) colorParts.push('warm tones');
+  if (state.saturation < 30) colorParts.push('desaturated');
+  else if (state.saturation > 80) colorParts.push('highly saturated');
+  if (colorParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-detail', colorParts.join(', ')));
+  }
+
+  // Effects
+  if (state.effects.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-detail', state.effects.join(', ')));
+  }
+
+  // Texture
+  if (state.texture) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-detail', state.texture.toLowerCase()));
+  }
+
+  // Quality
+  var qualityParts = state.quality.slice();
+  var detailLabels = { 1: 'minimal detail', 2: 'simple', 4: 'highly detailed', 5: 'extremely detailed, intricate' };
+  if (detailLabels[state.detail]) qualityParts.push(detailLabels[state.detail]);
+  if (qualityParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-quality', qualityParts.join(', ')));
+  }
+
+  document.getElementById('aspect-badge').textContent = state.ratio;
+}
+
+function updatePrompt() {
+  var prompt = buildPrompt();
+  var output = document.getElementById('output-text');
+
+  var neg = state.negative ? state.negative.trim() : '';
+  var display = prompt;
+  if (neg && state.platform === 'Stable Diffusion') {
+    display += '\n\nNegative prompt: ' + neg;
+  }
+  output.textContent = display;
+
+  // Color-coded char count with platform limits
+  var len = prompt.length;
+  var limits = { General:{o:200,ok:500,max:10000}, Midjourney:{o:300,ok:1000,max:6000}, 'DALL-E':{o:200,ok:1000,max:4000}, 'Stable Diffusion':{o:150,ok:280,max:380} };
+  var lim = limits[state.platform] || limits.General;
+  var countEl = document.getElementById('char-count');
+  var color, tip;
+  if (len <= lim.o) { color = 'var(--green)'; tip = t('char-optimal'); }
+  else if (len <= lim.ok) { color = 'var(--orange)'; tip = t('char-ok'); }
+  else { color = 'var(--red)'; tip = t('char-long'); }
+  var ct = len + ' chars';
+  if (state.platform !== 'General') ct += ' / ' + lim.max + ' max';
+  ct += ' · ' + tip;
+  if (neg) ct += ' | negative: ' + neg.length + ' chars';
+  countEl.textContent = ct;
+  countEl.style.color = color;
+}
+
+function buildPrompt() {
+  var parts = [];
+
+  if (state.subject) parts.push(state.subject.trim());
+  else parts.push('[subject]');
+
+  if (state.style) {
+    var s = state.style.toLowerCase();
+    if (state.substyle && state.substyle !== (STYLES[state.style] || [])[0]) {
+      s = state.substyle.toLowerCase() + ' ' + s;
+    }
+    parts.push(s);
+  }
+  if (state.artist) parts.push(state.artist);
+
+  if (state.mood) parts.push(state.mood.toLowerCase() + ' atmosphere');
+  if (state.lighting) parts.push(state.lighting.toLowerCase() + ' lighting');
+  if (state.timeofday) parts.push(state.timeofday.toLowerCase());
+
+  if (state.angle) parts.push(state.angle.toLowerCase());
+  if (state.framing) parts.push(state.framing.toLowerCase());
+  if (state.dof) parts.push(state.dof.toLowerCase() + ' depth of field');
+
+  if (state.palette) parts.push(state.palette.toLowerCase() + ' color palette');
+  if (state.temperature < 35) parts.push('cool tones');
+  else if (state.temperature > 65) parts.push('warm tones');
+  if (state.saturation < 30) parts.push('desaturated');
+  else if (state.saturation > 80) parts.push('vibrant saturated colors');
+
+  state.effects.forEach(function(e) { parts.push(e); });
+  if (state.texture) parts.push(state.texture.toLowerCase());
+
+  var detailLabels = { 1: 'minimal detail', 2: 'simple', 4: 'highly detailed', 5: 'extremely detailed, intricate' };
+  if (detailLabels[state.detail]) parts.push(detailLabels[state.detail]);
+  state.quality.forEach(function(q) { parts.push(q); });
+
+  var prompt = parts.join(', ');
+
+  // Platform-specific formatting
+  if (state.platform === 'Midjourney') {
+    var mjParts = [prompt];
+    if (state.ratio !== '1:1') mjParts.push('--ar ' + state.ratio);
+    mjParts.push('--q ' + state.mjQ);
+    if (state.mjSeed) mjParts.push('--seed ' + state.mjSeed);
+    if (state.mjStyle) mjParts.push('--style ' + state.mjStyle);
+    mjParts.push('--v ' + state.mjVersion);
+    prompt = mjParts.join(' ');
+  } else if (state.platform === 'Stable Diffusion') {
+    if (state.subject) {
+      prompt = prompt.replace(state.subject.trim(), '(' + state.subject.trim() + ')');
+    }
+    state.quality.forEach(function(q) {
+      prompt = prompt.replace(q, '(' + q + ')');
+    });
+  }
+
+  return prompt;
+}
+
+// ═══════════ COPY ═══════════
+
+function copyPrompt() {
+  var text = buildPrompt();
+  navigator.clipboard.writeText(text).then(function() { showToast('Copied!'); saveToHistory(); });
+}
+
+function copyNegative() {
+  var neg = (state.negative && state.negative.trim()) || 'blurry, low quality, watermark, text, deformed';
+  navigator.clipboard.writeText(neg).then(function() { showToast('Negative prompt copied!'); });
+}
+
+function showToast(msg) {
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 1500);
+}
+
+// ═══════════ PALETTE SWATCHES ═══════════
+
+var PALETTE_SWATCHES = {
+  'Warm Earth Tones': ['#8B4513','#CD853F','#D2691E','#A0522D','#DEB887'],
+  'Cool Blues & Teals': ['#1a5276','#2980b9','#1abc9c','#16a085','#5dade2'],
+  'Pastel': ['#ffc8dd','#ffafcc','#bde0fe','#a2d2ff','#cdb4db'],
+  'Neon / Cyberpunk': ['#ff00ff','#00ffff','#ff0080','#8000ff','#00ff80'],
+  'Monochrome': ['#1a1a1a','#4a4a4a','#7a7a7a','#aaaaaa','#dadada'],
+  'Sepia / Vintage': ['#704214','#8B6914','#C4A35A','#E8D5B7','#F5E6CC'],
+  'Complementary Contrast': ['#e74c3c','#2ecc71','#3498db','#f39c12','#9b59b6'],
+  'Analogous Harmony': ['#1a5276','#2471a3','#2e86c1','#3498db','#5dade2'],
+  'Desaturated / Muted': ['#7f8c8d','#95a5a6','#bdc3c7','#a9b7c6','#8e9ca8'],
+  'Jewel Tones': ['#6c3461','#1e3a5f','#0d6b4e','#7d3c0f','#901e2d'],
+  'Black & White': ['#000000','#333333','#777777','#bbbbbb','#ffffff'],
+  'Candy / Pop': ['#ff6b81','#ff9ff3','#feca57','#48dbfb','#ff6b6b']
+};
+
+function renderPaletteSwatch() {
+  var container = document.getElementById('palette-swatch');
+  container.textContent = '';
+  if (!state.palette || !PALETTE_SWATCHES[state.palette]) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'flex';
+  PALETTE_SWATCHES[state.palette].forEach(function(hex) {
+    var s = document.createElement('div');
+    s.className = 'swatch';
+    s.style.background = hex;
+    s.title = hex;
+    container.appendChild(s);
+  });
+}
+
+// ═══════════ PLATFORM PARAMS ═══════════
+
+function renderPlatformParams() {
+  var container = document.getElementById('platform-params');
+  container.textContent = '';
+  if (state.platform === 'General') { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  var title = document.createElement('div');
+  title.style.cssText = 'font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:8px;';
+  title.textContent = t('platform-params') + ' — ' + state.platform;
+  container.appendChild(title);
+  var grid = document.createElement('div');
+  grid.className = 'params-grid';
+  if (state.platform === 'Midjourney') {
+    addParamSelect(grid, t('mj-quality'), 'mjQ', ['1','2'], String(state.mjQ));
+    addParamInput(grid, t('mj-seed'), 'mjSeed', state.mjSeed, 'e.g. 12345');
+    addParamSelect(grid, t('mj-style'), 'mjStyle', ['','raw','scenic'], state.mjStyle);
+    addParamSelect(grid, t('mj-version'), 'mjVersion', ['5.2','6.0','6.1'], state.mjVersion);
+  } else if (state.platform === 'Stable Diffusion') {
+    addParamSlider(grid, t('sd-steps'), 'sdSteps', 1, 150, state.sdSteps);
+    addParamSlider(grid, t('sd-cfg'), 'sdCfg', 1, 30, state.sdCfg);
+    addParamSelect(grid, t('sd-sampler'), 'sdSampler',
+      ['Euler a','Euler','LMS','Heun','DPM2','DPM2 a','DPM++ 2S a','DPM++ 2M','DPM++ SDE','DDIM','PLMS'], state.sdSampler);
+  } else if (state.platform === 'DALL-E') {
+    addParamSelect(grid, t('dalle-size'), 'dalleSize', ['1024x1024','1024x1792','1792x1024'], state.dalleSize);
+  }
+  container.appendChild(grid);
+}
+
+function addParamSelect(grid, label, key, options, current) {
+  var row = document.createElement('div'); row.className = 'param-row';
+  var lbl = document.createElement('label'); lbl.textContent = label;
+  var sel = document.createElement('select');
+  options.forEach(function(o) {
+    var opt = document.createElement('option');
+    opt.value = o; opt.textContent = o || '— None —';
+    if (o === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', function() {
+    pushUndoState();
+    state[key] = typeof DEFAULTS[key] === 'number' ? parseInt(sel.value) : sel.value;
+    updatePrompt();
+  });
+  row.appendChild(lbl); row.appendChild(sel); grid.appendChild(row);
+}
+
+function addParamInput(grid, label, key, current, placeholder) {
+  var row = document.createElement('div'); row.className = 'param-row';
+  var lbl = document.createElement('label'); lbl.textContent = label;
+  var inp = document.createElement('input');
+  inp.type = 'text'; inp.value = current; inp.placeholder = placeholder || '';
+  inp.addEventListener('input', function() { state[key] = inp.value; updatePrompt(); });
+  row.appendChild(lbl); row.appendChild(inp); grid.appendChild(row);
+}
+
+function addParamSlider(grid, label, key, min, max, current) {
+  var row = document.createElement('div'); row.className = 'param-row';
+  var lbl = document.createElement('label'); lbl.textContent = label;
+  var sr = document.createElement('div'); sr.className = 'slider-row';
+  var slider = document.createElement('input');
+  slider.type = 'range'; slider.min = min; slider.max = max; slider.value = current;
+  var val = document.createElement('span'); val.className = 'slider-val'; val.textContent = current;
+  slider.addEventListener('input', function() {
+    state[key] = parseInt(slider.value); val.textContent = slider.value; updatePrompt();
+  });
+  sr.appendChild(slider); sr.appendChild(val);
+  row.appendChild(lbl); row.appendChild(sr); grid.appendChild(row);
+}
+
+// ═══════════ EXPORT ═══════════
+
+function toggleExportDropdown() {
+  var dd = document.getElementById('export-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+  var dd = document.getElementById('export-dropdown');
+  if (dd && !e.target.closest('.export-wrapper')) dd.style.display = 'none';
+});
+
+function exportAs(format) {
+  var prompt = buildPrompt();
+  var text = '';
+  if (format === 'json') {
+    text = JSON.stringify({ state: cloneState(), prompt: prompt, timestamp: new Date().toISOString() }, null, 2);
+  } else if (format === 'md') {
+    var lines = ['| Field | Value |', '|-------|-------|'];
+    Object.keys(state).forEach(function(k) {
+      var v = Array.isArray(state[k]) ? state[k].join(', ') : state[k];
+      if (v !== '' && v !== 0 && !(Array.isArray(state[k]) && !state[k].length)) lines.push('| ' + k + ' | ' + v + ' |');
+    });
+    lines.push('', '**Prompt:**', prompt);
+    text = lines.join('\n');
+  } else {
+    var lines = [];
+    Object.keys(state).forEach(function(k) {
+      var v = Array.isArray(state[k]) ? state[k].join(', ') : state[k];
+      if (v !== '' && v !== 0 && !(Array.isArray(state[k]) && !state[k].length)) lines.push(k + ': ' + v);
+    });
+    lines.push('', 'Prompt: ' + prompt);
+    text = lines.join('\n');
+  }
+  navigator.clipboard.writeText(text).then(function() {
+    showToast(t('export') + ' (' + format.toUpperCase() + ') copied!');
+  });
+  document.getElementById('export-dropdown').style.display = 'none';
+}
+
+// ═══════════ SHARE LINK ═══════════
+
+function encodeShareLink() {
+  var params = new URLSearchParams();
+  Object.keys(DEFAULTS).forEach(function(key) {
+    var val = state[key], def = DEFAULTS[key];
+    if (Array.isArray(val)) { if (val.length) params.set(key, val.join('|')); }
+    else if (val !== def) params.set(key, val);
+  });
+  if (currentLang !== 'en') params.set('lang', currentLang);
+  return location.origin + location.pathname + '?' + params.toString();
+}
+
+function decodeShareLink() {
+  var params = new URLSearchParams(location.search);
+  if (!params.toString()) return false;
+  params.forEach(function(val, key) {
+    if (key === 'lang') { currentLang = val; return; }
+    if (!(key in DEFAULTS)) return;
+    if (Array.isArray(DEFAULTS[key])) state[key] = val ? val.split('|') : [];
+    else if (typeof DEFAULTS[key] === 'number') state[key] = parseInt(val) || DEFAULTS[key];
+    else state[key] = val;
+  });
+  return true;
+}
+
+function shareLink() {
+  navigator.clipboard.writeText(encodeShareLink()).then(function() {
+    showToast(t('share-copied'));
+  });
+}
+
+// ═══════════ i18n ═══════════
+
+var currentLang = 'en';
+
+var I18N = {
+  'title': { en: 'Image Prompt Generator', zh: '生圖 Prompt 產生器' },
+  'presets': { en: 'PRESETS', zh: '預設範本' },
+  'subject': { en: 'Subject', zh: '主題' },
+  'main-subject': { en: 'Main Subject', zh: '主要主題' },
+  'subject-placeholder': { en: 'e.g. a lone samurai standing on a cliff at sunset', zh: '例：夕陽下站在懸崖上的孤獨武士' },
+  'art-style': { en: 'Art Style', zh: '藝術風格' },
+  'primary-style': { en: 'Primary Style', zh: '主風格' },
+  'sub-style': { en: 'Sub-style', zh: '子風格' },
+  'artist-ref': { en: 'Artist / Reference (optional)', zh: '藝術家 / 參考風格（選填）' },
+  'artist-placeholder': { en: 'e.g. in the style of Studio Ghibli', zh: '例：以吉卜力工作室的風格' },
+  'mood-lighting': { en: 'Mood & Lighting', zh: '氛圍與光線' },
+  'mood': { en: 'Mood / Atmosphere', zh: '氛圍' },
+  'lighting': { en: 'Lighting', zh: '光源' },
+  'time-of-day': { en: 'Time of Day', zh: '時間' },
+  'composition': { en: 'Composition', zh: '構圖' },
+  'camera-angle': { en: 'Camera Angle', zh: '鏡頭角度' },
+  'framing': { en: 'Framing', zh: '取景方式' },
+  'depth-of-field': { en: 'Depth of Field', zh: '景深' },
+  'color': { en: 'Color', zh: '色彩' },
+  'color-palette': { en: 'Color Palette', zh: '色板' },
+  'color-temp': { en: 'Color Temperature', zh: '色溫' },
+  'saturation': { en: 'Saturation', zh: '飽和度' },
+  'detail-quality': { en: 'Detail & Quality', zh: '細節與品質' },
+  'detail-level': { en: 'Detail Level', zh: '細節程度' },
+  'quality-mods': { en: 'Quality Modifiers', zh: '品質修飾詞' },
+  'effects-extras': { en: 'Effects & Extras', zh: '特效與附加' },
+  'visual-effects': { en: 'Visual Effects', zh: '視覺特效' },
+  'texture': { en: 'Texture', zh: '材質紋理' },
+  'output-settings': { en: 'Output Settings', zh: '輸出設定' },
+  'aspect-ratio': { en: 'Aspect Ratio', zh: '長寬比' },
+  'negative-prompt': { en: 'Negative Prompt (optional)', zh: '反向提示詞（選填）' },
+  'negative-placeholder': { en: 'e.g. blurry, low quality, watermark, text', zh: '例：模糊、低品質、浮水印、文字' },
+  'prompt-output': { en: 'Prompt Output', zh: '產出 Prompt' },
+  'copy-negative': { en: 'Copy Negative', zh: '複製反向' },
+  'copy-prompt': { en: 'Copy Prompt', zh: '複製 Prompt' },
+  'none': { en: '— None —', zh: '— 無 —' },
+  'legend-subject': { en: 'Subject', zh: '主題' },
+  'legend-style': { en: 'Style', zh: '風格' },
+  'legend-mood': { en: 'Mood', zh: '氛圍' },
+  'legend-lighting': { en: 'Lighting', zh: '光線' },
+  'legend-composition': { en: 'Composition', zh: '構圖' },
+  'legend-quality': { en: 'Quality', zh: '品質' },
+  'preset-Cinematic Portrait': { en: 'Cinematic Portrait', zh: '電影人像' },
+  'preset-Dreamy Landscape': { en: 'Dreamy Landscape', zh: '夢幻風景' },
+  'preset-Anime Character': { en: 'Anime Character', zh: '動漫角色' },
+  'preset-Product Photo': { en: 'Product Photo', zh: '產品攝影' },
+  'preset-Fantasy Epic': { en: 'Fantasy Epic', zh: '奇幻史詩' },
+  'slider-cool': { en: 'Cool', zh: '冷色' },
+  'slider-sl-cool': { en: 'Sl. Cool', zh: '偏冷' },
+  'slider-neutral': { en: 'Neutral', zh: '中性' },
+  'slider-sl-warm': { en: 'Sl. Warm', zh: '偏暖' },
+  'slider-warm': { en: 'Warm', zh: '暖色' },
+  'slider-minimal': { en: 'Minimal', zh: '極簡' },
+  'slider-simple': { en: 'Simple', zh: '簡單' },
+  'slider-normal': { en: 'Normal', zh: '一般' },
+  'slider-detailed': { en: 'Detailed', zh: '精細' },
+  'slider-ultra': { en: 'Ultra', zh: '極致' },
+  'preview-placeholder': { en: '[enter your subject above]', zh: '[請在上方輸入主題]' },
+
+  // ── Style options ──
+  'opt-Photorealistic': { en: 'Photorealistic', zh: '寫實攝影' },
+  'opt-Digital Art': { en: 'Digital Art', zh: '數位藝術' },
+  'opt-Oil Painting': { en: 'Oil Painting', zh: '油畫' },
+  'opt-Watercolor': { en: 'Watercolor', zh: '水彩' },
+  'opt-Anime / Manga': { en: 'Anime / Manga', zh: '動漫' },
+  'opt-Illustration': { en: 'Illustration', zh: '插畫' },
+  'opt-Pixel Art': { en: 'Pixel Art', zh: '像素風' },
+  'opt-3D Render': { en: '3D Render', zh: '3D 渲染' },
+  'opt-Pencil / Ink': { en: 'Pencil / Ink', zh: '鉛筆 / 墨水' },
+  'opt-Abstract': { en: 'Abstract', zh: '抽象' },
+
+  // ── Sub-style options ──
+  'opt-Natural': { en: 'Natural', zh: '自然' },
+  'opt-Studio Portrait': { en: 'Studio Portrait', zh: '棚拍人像' },
+  'opt-Fashion Editorial': { en: 'Fashion Editorial', zh: '時尚編輯' },
+  'opt-Street Photography': { en: 'Street Photography', zh: '街拍' },
+  'opt-Macro': { en: 'Macro', zh: '微距' },
+  'opt-Aerial Drone': { en: 'Aerial Drone', zh: '空拍' },
+  'opt-Concept Art': { en: 'Concept Art', zh: '概念藝術' },
+  'opt-Matte Painting': { en: 'Matte Painting', zh: '數位場景繪製' },
+  'opt-Character Design': { en: 'Character Design', zh: '角色設計' },
+  'opt-Environment Art': { en: 'Environment Art', zh: '環境美術' },
+  'opt-Sci-Fi': { en: 'Sci-Fi', zh: '科幻' },
+  'opt-Fantasy': { en: 'Fantasy', zh: '奇幻' },
+  'opt-Classical': { en: 'Classical', zh: '古典' },
+  'opt-Impressionist': { en: 'Impressionist', zh: '印象派' },
+  'opt-Expressionist': { en: 'Expressionist', zh: '表現主義' },
+  'opt-Renaissance': { en: 'Renaissance', zh: '文藝復興' },
+  'opt-Baroque': { en: 'Baroque', zh: '巴洛克' },
+  'opt-Traditional': { en: 'Traditional', zh: '傳統' },
+  'opt-Loose & Fluid': { en: 'Loose & Fluid', zh: '流動暈染' },
+  'opt-Botanical': { en: 'Botanical', zh: '植物學繪圖' },
+  'opt-Urban Sketch': { en: 'Urban Sketch', zh: '城市速寫' },
+  'opt-Modern Anime': { en: 'Modern Anime', zh: '現代動漫' },
+  'opt-Classic 90s Anime': { en: 'Classic 90s Anime', zh: '90 年代動漫' },
+  'opt-Chibi': { en: 'Chibi', zh: 'Q版' },
+  'opt-Seinen': { en: 'Seinen', zh: '青年向' },
+  'opt-Shojo': { en: 'Shojo', zh: '少女向' },
+  'opt-Flat Design': { en: 'Flat Design', zh: '扁平風格' },
+  'opt-Editorial': { en: 'Editorial', zh: '社論插畫' },
+  "opt-Children's Book": { en: "Children's Book", zh: '童書繪本' },
+  'opt-Retro': { en: 'Retro', zh: '復古' },
+  'opt-Vintage Poster': { en: 'Vintage Poster', zh: '復古海報' },
+  'opt-8-bit': { en: '8-bit', zh: '8-bit' },
+  'opt-16-bit': { en: '16-bit', zh: '16-bit' },
+  'opt-Isometric': { en: 'Isometric', zh: '等角視圖' },
+  'opt-Modern Pixel': { en: 'Modern Pixel', zh: '現代像素' },
+  'opt-Blender Style': { en: 'Blender Style', zh: 'Blender 風格' },
+  'opt-Unreal Engine': { en: 'Unreal Engine', zh: 'Unreal Engine' },
+  'opt-Clay Render': { en: 'Clay Render', zh: '黏土渲染' },
+  'opt-Low Poly': { en: 'Low Poly', zh: '低多邊形' },
+  'opt-Voxel': { en: 'Voxel', zh: '體素' },
+  'opt-Pencil Sketch': { en: 'Pencil Sketch', zh: '鉛筆素描' },
+  'opt-Ink Drawing': { en: 'Ink Drawing', zh: '墨水畫' },
+  'opt-Cross-Hatching': { en: 'Cross-Hatching', zh: '交叉排線' },
+  'opt-Charcoal': { en: 'Charcoal', zh: '炭筆' },
+  'opt-Line Art': { en: 'Line Art', zh: '線稿' },
+  'opt-Geometric': { en: 'Geometric', zh: '幾何' },
+  'opt-Fluid': { en: 'Fluid', zh: '流體' },
+  'opt-Minimalist': { en: 'Minimalist', zh: '極簡' },
+  'opt-Surreal': { en: 'Surreal', zh: '超現實' },
+
+  // ── Mood options ──
+  'opt-Serene & Peaceful': { en: 'Serene & Peaceful', zh: '寧靜祥和' },
+  'opt-Dreamy & Ethereal': { en: 'Dreamy & Ethereal', zh: '夢幻飄渺' },
+  'opt-Dark & Moody': { en: 'Dark & Moody', zh: '暗黑沉鬱' },
+  'opt-Dramatic & Intense': { en: 'Dramatic & Intense', zh: '戲劇張力' },
+  'opt-Vibrant & Energetic': { en: 'Vibrant & Energetic', zh: '活力充沛' },
+  'opt-Nostalgic & Warm': { en: 'Nostalgic & Warm', zh: '溫暖懷舊' },
+  'opt-Mysterious & Enigmatic': { en: 'Mysterious & Enigmatic', zh: '神秘深邃' },
+  'opt-Whimsical & Playful': { en: 'Whimsical & Playful', zh: '奇趣俏皮' },
+  'opt-Melancholic': { en: 'Melancholic', zh: '憂鬱' },
+  'opt-Epic & Grand': { en: 'Epic & Grand', zh: '壯闊史詩' },
+  'opt-Cozy & Intimate': { en: 'Cozy & Intimate', zh: '溫馨親密' },
+  'opt-Eerie & Unsettling': { en: 'Eerie & Unsettling', zh: '詭異不安' },
+  'opt-Romantic': { en: 'Romantic', zh: '浪漫' },
+
+  // ── Lighting options ──
+  'opt-Golden Hour': { en: 'Golden Hour', zh: '黃金時刻' },
+  'opt-Blue Hour': { en: 'Blue Hour', zh: '藍調時分' },
+  'opt-Soft Diffused': { en: 'Soft Diffused', zh: '柔和散射' },
+  'opt-Hard Directional': { en: 'Hard Directional', zh: '硬光定向' },
+  'opt-Rim / Backlighting': { en: 'Rim / Backlighting', zh: '輪廓光 / 逆光' },
+  'opt-Neon / Cyberpunk': { en: 'Neon / Cyberpunk', zh: '霓虹 / 賽博龐克' },
+  'opt-Moonlight': { en: 'Moonlight', zh: '月光' },
+  'opt-Candlelight': { en: 'Candlelight', zh: '燭光' },
+  'opt-Studio Three-Point': { en: 'Studio Three-Point', zh: '棚拍三點打光' },
+  'opt-Volumetric God Rays': { en: 'Volumetric God Rays', zh: '體積光 / 丁達爾光' },
+  'opt-Bioluminescent': { en: 'Bioluminescent', zh: '生物發光' },
+  'opt-Overcast Flat': { en: 'Overcast Flat', zh: '陰天平光' },
+  'opt-Chiaroscuro': { en: 'Chiaroscuro', zh: '明暗對比法' },
+  'opt-Under Dramatic Clouds': { en: 'Under Dramatic Clouds', zh: '戲劇性雲層下' },
+
+  // ── Time of day ──
+  'opt-Dawn': { en: 'Dawn', zh: '黎明' },
+  'opt-Morning': { en: 'Morning', zh: '上午' },
+  'opt-Noon': { en: 'Noon', zh: '正午' },
+  'opt-Afternoon': { en: 'Afternoon', zh: '下午' },
+  'opt-Dusk / Twilight': { en: 'Dusk / Twilight', zh: '黃昏' },
+  'opt-Night': { en: 'Night', zh: '夜晚' },
+  'opt-Midnight': { en: 'Midnight', zh: '午夜' },
+
+  // ── Camera angle ──
+  'opt-Eye Level': { en: 'Eye Level', zh: '平視' },
+  'opt-Low Angle (Hero Shot)': { en: 'Low Angle (Hero Shot)', zh: '仰角（英雄鏡頭）' },
+  'opt-High Angle': { en: 'High Angle', zh: '俯角' },
+  "opt-Bird's Eye / Top-Down": { en: "Bird's Eye / Top-Down", zh: '鳥瞰' },
+  "opt-Worm's Eye": { en: "Worm's Eye", zh: '蟲視' },
+  'opt-Dutch Angle / Tilted': { en: 'Dutch Angle / Tilted', zh: '荷蘭角（傾斜）' },
+  'opt-Over-the-Shoulder': { en: 'Over-the-Shoulder', zh: '過肩鏡頭' },
+  'opt-First Person POV': { en: 'First Person POV', zh: '第一人稱視角' },
+
+  // ── Framing ──
+  'opt-Extreme Close-Up': { en: 'Extreme Close-Up', zh: '超特寫' },
+  'opt-Close-Up': { en: 'Close-Up', zh: '特寫' },
+  'opt-Medium Shot': { en: 'Medium Shot', zh: '中景' },
+  'opt-Full Body': { en: 'Full Body', zh: '全身' },
+  'opt-Wide Shot': { en: 'Wide Shot', zh: '廣角' },
+  'opt-Ultra-Wide / Panoramic': { en: 'Ultra-Wide / Panoramic', zh: '超廣角 / 全景' },
+  'opt-Symmetrical / Centered': { en: 'Symmetrical / Centered', zh: '對稱置中' },
+  'opt-Rule of Thirds': { en: 'Rule of Thirds', zh: '三分法構圖' },
+  'opt-Frame Within Frame': { en: 'Frame Within Frame', zh: '框中框' },
+
+  // ── Depth of field ──
+  'opt-Shallow (Bokeh)': { en: 'Shallow (Bokeh)', zh: '淺景深（散景）' },
+  'opt-Medium': { en: 'Medium', zh: '中景深' },
+  'opt-Deep / Everything Sharp': { en: 'Deep / Everything Sharp', zh: '深景深（全部清晰）' },
+  'opt-Tilt-Shift Miniature': { en: 'Tilt-Shift Miniature', zh: '移軸微縮' },
+
+  // ── Color palette ──
+  'opt-Warm Earth Tones': { en: 'Warm Earth Tones', zh: '暖色大地色系' },
+  'opt-Cool Blues & Teals': { en: 'Cool Blues & Teals', zh: '冷調藍綠色系' },
+  'opt-Pastel': { en: 'Pastel', zh: '粉彩色系' },
+  'opt-Neon / Cyberpunk': { en: 'Neon / Cyberpunk', zh: '霓虹 / 賽博龐克' },
+  'opt-Monochrome': { en: 'Monochrome', zh: '單色' },
+  'opt-Sepia / Vintage': { en: 'Sepia / Vintage', zh: '復古褐色' },
+  'opt-Complementary Contrast': { en: 'Complementary Contrast', zh: '互補對比' },
+  'opt-Analogous Harmony': { en: 'Analogous Harmony', zh: '類似色和諧' },
+  'opt-Desaturated / Muted': { en: 'Desaturated / Muted', zh: '低飽和 / 柔和' },
+  'opt-Jewel Tones': { en: 'Jewel Tones', zh: '寶石色調' },
+  'opt-Black & White': { en: 'Black & White', zh: '黑白' },
+  'opt-Candy / Pop': { en: 'Candy / Pop', zh: '糖果色 / 普普風' },
+
+  // ── Texture ──
+  'opt-Smooth / Clean': { en: 'Smooth / Clean', zh: '光滑乾淨' },
+  'opt-Grainy / Film Grain': { en: 'Grainy / Film Grain', zh: '底片顆粒' },
+  'opt-Painterly Brush Strokes': { en: 'Painterly Brush Strokes', zh: '畫筆筆觸' },
+  'opt-Paper / Canvas': { en: 'Paper / Canvas', zh: '紙張 / 畫布' },
+  'opt-Metallic / Chrome': { en: 'Metallic / Chrome', zh: '金屬光澤' },
+  'opt-Glitch / Digital Artifacts': { en: 'Glitch / Digital Artifacts', zh: '故障效果' },
+  'opt-Fabric / Textile': { en: 'Fabric / Textile', zh: '織物材質' },
+
+  // ── Quality modifier chips ──
+  'chip-masterpiece': { en: 'masterpiece', zh: '傑作' },
+  'chip-best quality': { en: 'best quality', zh: '最佳品質' },
+  'chip-4K': { en: '4K', zh: '4K' },
+  'chip-8K UHD': { en: '8K UHD', zh: '8K UHD' },
+  'chip-highly detailed': { en: 'highly detailed', zh: '高度精細' },
+  'chip-sharp focus': { en: 'sharp focus', zh: '銳利對焦' },
+  'chip-professional': { en: 'professional', zh: '專業級' },
+  'chip-award-winning': { en: 'award-winning', zh: '得獎作品' },
+  'chip-trending on ArtStation': { en: 'trending on ArtStation', zh: 'ArtStation 熱門' },
+
+  // ── Effect chips ──
+  'chip-bokeh': { en: 'bokeh', zh: '散景' },
+  'chip-lens flare': { en: 'lens flare', zh: '鏡頭光暈' },
+  'chip-fog / mist': { en: 'fog / mist', zh: '霧氣' },
+  'chip-particles / dust': { en: 'particles / dust', zh: '粒子 / 灰塵' },
+  'chip-rain': { en: 'rain', zh: '雨' },
+  'chip-snow': { en: 'snow', zh: '雪' },
+  'chip-reflections': { en: 'reflections', zh: '倒影' },
+  'chip-motion blur': { en: 'motion blur', zh: '動態模糊' },
+  'chip-light rays': { en: 'light rays', zh: '光束' },
+  'chip-chromatic aberration': { en: 'chromatic aberration', zh: '色差' },
+  'chip-film grain': { en: 'film grain', zh: '底片顆粒' },
+  'chip-double exposure': { en: 'double exposure', zh: '雙重曝光' },
+  'chip-glitch effect': { en: 'glitch effect', zh: '故障效果' },
+  'chip-sparkles': { en: 'sparkles', zh: '閃光' },
+  'chip-smoke': { en: 'smoke', zh: '煙霧' },
+
+  // ── History ──
+  'history': { en: 'History', zh: '歷史紀錄' },
+  'history-empty': { en: 'No history yet', zh: '尚無歷史紀錄' },
+  'history-load': { en: 'Load', zh: '載入' },
+  'history-delete': { en: 'Delete', zh: '刪除' },
+
+  // ── Subject Templates ──
+  'tpl-person': { en: '#Person', zh: '#人物' },
+  'tpl-landscape': { en: '#Landscape', zh: '#風景' },
+  'tpl-still-life': { en: '#Still Life', zh: '#靜物' },
+  'tpl-architecture': { en: '#Architecture', zh: '#建築' },
+  'tpl-animal': { en: '#Animal', zh: '#動物' },
+  'tpl-scene': { en: '#Scene', zh: '#場景' },
+  'tpl-food': { en: '#Food', zh: '#美食' },
+  'tpl-vehicle': { en: '#Vehicle', zh: '#交通工具' },
+
+  // ── Platform Params ──
+  'platform-params': { en: 'Platform Parameters', zh: '平台參數' },
+  'mj-quality': { en: 'Quality', zh: '品質' },
+  'mj-seed': { en: 'Seed', zh: '種子碼' },
+  'mj-style': { en: 'Style', zh: '風格' },
+  'mj-version': { en: 'Version', zh: '版本' },
+  'sd-steps': { en: 'Steps', zh: '步數' },
+  'sd-cfg': { en: 'CFG Scale', zh: 'CFG 引導比例' },
+  'sd-sampler': { en: 'Sampler', zh: '採樣器' },
+  'dalle-size': { en: 'Size', zh: '尺寸' },
+
+  // ── Export & Share ──
+  'export': { en: 'Export', zh: '匯出' },
+  'share-copied': { en: 'Share link copied!', zh: '分享連結已複製！' },
+
+  // ── Char Count ──
+  'char-optimal': { en: 'optimal length', zh: '最佳長度' },
+  'char-ok': { en: 'acceptable', zh: '可接受' },
+  'char-long': { en: 'may be too long', zh: '可能過長' },
+
+  // ── Preset Modes ──
+  'preset-mode-all': { en: 'Apply All', zh: '全部套用' },
+  'preset-mode-style': { en: 'Style Only', zh: '僅套用風格' },
+};
+
+function t(key) {
+  var entry = I18N[key];
+  if (!entry) return key;
+  return entry[currentLang] || entry.en;
+}
+
+// All translatable elements have data-i18n attributes
+function applyLang() {
+  // Static data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+
+  // Repopulate all selects with translated options
+  populateSelect('style', Object.keys(STYLES));
+  document.getElementById('style').value = state.style;
+  populateSubstyles();
+  document.getElementById('substyle').value = state.substyle;
+  populateSelect('mood', MOODS); document.getElementById('mood').value = state.mood;
+  populateSelect('lighting', LIGHTING); document.getElementById('lighting').value = state.lighting;
+  populateSelect('timeofday', TIMEOFDAY); document.getElementById('timeofday').value = state.timeofday;
+  populateSelect('angle', ANGLES); document.getElementById('angle').value = state.angle;
+  populateSelect('framing', FRAMINGS); document.getElementById('framing').value = state.framing;
+  populateSelect('dof', DOFS); document.getElementById('dof').value = state.dof;
+  populateSelect('palette', PALETTES); document.getElementById('palette').value = state.palette;
+  populateSelect('texture', TEXTURES); document.getElementById('texture').value = state.texture;
+
+  // Lang toggle button
+  document.getElementById('lang-toggle').textContent = currentLang === 'en' ? '中文' : 'EN';
+
+  // Rebuild dynamic elements
+  buildChips('quality-chips', QUALITY_MODS, 'quality');
+  buildChips('effect-chips', EFFECTS, 'effects');
+  buildChips('ratio-chips', RATIOS, 'ratio', true);
+  buildPresetMode();
+  buildPresets();
+  buildTemplateChips();
+  var legendContainer = document.getElementById('legend');
+  legendContainer.textContent = '';
+  buildLegend();
+
+  // Refresh slider value labels
+  ['temperature', 'saturation', 'detail'].forEach(function(id) {
+    document.getElementById(id).dispatchEvent(new Event('input'));
+  });
+
+  // Refresh preview (for placeholder text)
+  updateAll();
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'en' ? 'zh' : 'en';
+  applyLang();
+}
+
+// ═══════════ GO ═══════════
+decodeShareLink();
+init();
+applyLang();
+initTheme();
+</script>
+</body>
+</html>
