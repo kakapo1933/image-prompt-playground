@@ -75,6 +75,8 @@
     justify-content: space-between;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .lang-toggle {
@@ -297,6 +299,8 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .output-label {
     font-size: 12px;
@@ -305,7 +309,7 @@
     letter-spacing: 0.5px;
     color: var(--text2);
   }
-  .output-actions { display: flex; gap: 6px; }
+  .output-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
   .btn {
     background: var(--accent);
@@ -454,7 +458,7 @@
   }
   .copied-toast.show { opacity: 1; transform: translateY(0); }
 
-  .platform-tabs { display: flex; gap: 4px; }
+  .platform-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
   .platform-tab {
     background: var(--surface3);
     border: 1px solid var(--border);
