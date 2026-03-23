@@ -635,6 +635,8 @@
       <div class="control-row"><label data-i18n="mood">Mood / Atmosphere</label><select id="mood"></select></div>
       <div class="control-row"><label data-i18n="lighting">Lighting</label><select id="lighting"></select></div>
       <div class="control-row"><label data-i18n="time-of-day">Time of Day</label><select id="timeofday"></select></div>
+      <div class="control-row"><label data-i18n="light-direction">Light Direction</label><select id="lightdir"></select></div>
+      <div class="control-row"><label data-i18n="shadow">Shadow</label><select id="shadow"></select></div>
     </div>
   </div>
 
@@ -645,6 +647,8 @@
       <div class="control-row"><label data-i18n="camera-angle">Camera Angle</label><select id="angle"></select></div>
       <div class="control-row"><label data-i18n="framing">Framing</label><select id="framing"></select></div>
       <div class="control-row"><label data-i18n="depth-of-field">Depth of Field</label><select id="dof"></select></div>
+      <div class="control-row"><label data-i18n="focus">Focus</label><select id="focus"></select></div>
+      <div class="control-row"><label data-i18n="perspective">Perspective</label><select id="perspective"></select></div>
     </div>
   </div>
 
@@ -682,6 +686,54 @@
     <div class="section-body hidden">
       <div class="control-row"><label data-i18n="visual-effects">Visual Effects</label><div class="chip-group" id="effect-chips"></div></div>
       <div class="control-row"><label data-i18n="texture">Texture</label><select id="texture"></select></div>
+      <div class="control-row"><label data-i18n="light-sources">Light Sources</label><div class="chip-group" id="lightsource-chips"></div></div>
+    </div>
+  </div>
+
+  <!-- Pose & Action -->
+  <div class="section">
+    <div class="section-header collapsed" data-lock="pose" onclick="toggleSection(this)"><span data-i18n="pose-action">Pose &amp; Action</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('pose',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body hidden">
+      <div class="control-row"><label data-i18n="base-pose">Base Pose</label><select id="pose"></select></div>
+      <div class="control-row"><label data-i18n="hand-gesture">Hand Gesture</label><div class="chip-group" id="gesture-chips"></div></div>
+    </div>
+  </div>
+
+  <!-- Expression -->
+  <div class="section">
+    <div class="section-header collapsed" data-lock="expression" onclick="toggleSection(this)"><span data-i18n="expression-section">Expression</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('expression',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body hidden">
+      <div class="control-row"><label data-i18n="expression">Expression</label><select id="expression"></select></div>
+      <div class="control-row"><label data-i18n="mouth-shape">Mouth</label><select id="mouth"></select></div>
+      <div class="control-row"><label data-i18n="eye-state">Eyes</label><select id="eyestate"></select></div>
+    </div>
+  </div>
+
+  <!-- Character -->
+  <div class="section">
+    <div class="section-header collapsed" data-lock="character" onclick="toggleSection(this)"><span data-i18n="character-section">Character</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('character',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body hidden">
+      <div class="control-row"><label data-i18n="race">Race / Species</label><select id="race"></select></div>
+      <div class="control-row"><label data-i18n="occupation">Occupation</label><select id="occupation"></select></div>
+      <div class="control-row"><label data-i18n="hairstyle">Hairstyle</label><select id="hairstyle"></select></div>
+      <div class="control-row"><label data-i18n="hair-color">Hair Color</label><select id="haircolor"></select></div>
+    </div>
+  </div>
+
+  <!-- Clothing -->
+  <div class="section">
+    <div class="section-header collapsed" data-lock="clothing" onclick="toggleSection(this)"><span data-i18n="clothing-section">Clothing</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('clothing',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body hidden">
+      <div class="control-row"><label data-i18n="outfit">Outfit</label><select id="outfit"></select></div>
+    </div>
+  </div>
+
+  <!-- Scene -->
+  <div class="section">
+    <div class="section-header collapsed" data-lock="scene" onclick="toggleSection(this)"><span data-i18n="scene-section">Scene</span> <div class="section-header-right"><button class="lock-btn" onclick="event.stopPropagation();toggleLock('scene',this)">🔓</button><span class="arrow">&#9660;</span></div></div>
+    <div class="section-body hidden">
+      <div class="control-row"><label data-i18n="location">Location</label><select id="scene"></select></div>
+      <div class="control-row"><label data-i18n="scene-props">Props</label><div class="chip-group" id="props-chips"></div></div>
     </div>
   </div>
 
@@ -765,15 +817,18 @@ const MOODS = ['', 'Serene & Peaceful', 'Dreamy & Ethereal', 'Dark & Moody', 'Dr
 
 const LIGHTING = ['', 'Golden Hour', 'Blue Hour', 'Soft Diffused', 'Hard Directional',
   'Rim / Backlighting', 'Neon / Cyberpunk', 'Moonlight', 'Candlelight', 'Studio Three-Point',
-  'Volumetric God Rays', 'Bioluminescent', 'Overcast Flat', 'Chiaroscuro', 'Under Dramatic Clouds'];
+  'Volumetric God Rays', 'Bioluminescent', 'Overcast Flat', 'Chiaroscuro', 'Under Dramatic Clouds',
+  'Sunlight', 'Sunbeam', 'Spotlight', 'Stage Lights'];
 
 const TIMEOFDAY = ['', 'Dawn', 'Morning', 'Noon', 'Afternoon', 'Golden Hour', 'Dusk / Twilight', 'Night', 'Midnight'];
 
 const ANGLES = ['', 'Eye Level', 'Low Angle (Hero Shot)', 'High Angle', "Bird's Eye / Top-Down",
-  "Worm's Eye", 'Dutch Angle / Tilted', 'Over-the-Shoulder', 'First Person POV'];
+  "Worm's Eye", 'Dutch Angle / Tilted', 'Over-the-Shoulder', 'First Person POV',
+  'From Behind', 'From Above', 'From Below', 'Side View', 'Aerial View', 'Selfie'];
 
 const FRAMINGS = ['', 'Extreme Close-Up', 'Close-Up', 'Medium Shot', 'Full Body',
-  'Wide Shot', 'Ultra-Wide / Panoramic', 'Symmetrical / Centered', 'Rule of Thirds', 'Frame Within Frame'];
+  'Wide Shot', 'Ultra-Wide / Panoramic', 'Symmetrical / Centered', 'Rule of Thirds', 'Frame Within Frame',
+  'Portrait', 'Upper Body', 'Cowboy Shot', 'Long Shot', 'Establishing Shot'];
 
 const DOFS = ['', 'Shallow (Bokeh)', 'Medium', 'Deep / Everything Sharp', 'Tilt-Shift Miniature'];
 
@@ -790,9 +845,76 @@ const QUALITY_MODS = ['masterpiece', 'best quality', '4K', '8K UHD', 'highly det
 const EFFECTS = ['bokeh', 'lens flare', 'fog / mist', 'particles / dust',
   'rain', 'snow', 'reflections', 'motion blur', 'light rays',
   'chromatic aberration', 'film grain', 'double exposure', 'glitch effect',
-  'sparkles', 'smoke'];
+  'sparkles', 'smoke', 'caustics', 'dispersion', 'crack of light'];
 
 const RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:2', '2:3', '3:4', '21:9'];
+
+const FOCUS = ['', 'Solo Focus', 'Face Focus', 'Eye Focus'];
+
+const PERSPECTIVE = ['', 'Atmospheric Perspective', 'Fisheye', 'Panorama',
+  'Three-Point Perspective', 'Vanishing Point', 'Foreshortening'];
+
+const LIGHT_DIRECTION = ['', 'Frontlight', 'Sidelight', 'Backlight', 'Underlight', 'Rim Light'];
+
+const SHADOWS = ['', 'Dark', 'Dim Lighting', 'Dappled Sunlight', 'Drop Shadow',
+  'Tree Shade', 'Window Shadow'];
+
+const LIGHT_SOURCES = ['ring light', 'lantern', 'paper lantern', 'oil lamp',
+  'desk lamp', 'wall lamp', 'ceiling light', 'chandelier', 'glowstick',
+  'flashlight', 'fireworks', 'fire', 'embers', 'torch', 'neon sign'];
+
+const POSES = ['', 'Standing', 'Sitting', 'Kneeling', 'Squatting', 'Lying Down', 'Crouching',
+  'Leaning', 'Floating', 'Walking', 'Running', 'Jumping', 'Flying', 'Falling', 'Crawling',
+  'Swimming', 'All Fours', 'Seiza', 'Lotus Position', 'Stretching'];
+
+const HAND_GESTURES = ['peace sign', 'thumbs up', 'finger heart', 'pointing', 'waving',
+  'salute', 'fist', 'open hand', 'ok sign', 'heart hands', 'cat pose', 'finger gun'];
+
+const EXPRESSIONS = ['', 'Happy', 'Excited', 'Smiling', 'Grinning', 'Sad', 'Crying', 'Angry',
+  'Annoyed', 'Surprised', 'Shocked', 'Scared', 'Embarrassed', 'Shy', 'Bored', 'Sleepy',
+  'Expressionless', 'Determined', 'Melancholic', 'Flustered', 'Nervous', 'Disgusted',
+  'Drunk', 'Smirk', 'Evil Smile', 'Crazy'];
+
+const MOUTH_SHAPES = ['', 'Smile', 'Grin', 'Pout', 'Open Mouth', 'Tongue Out', 'Closed Mouth',
+  'Smirk', 'Frown', 'Parted Lips', 'Drooling', 'Biting Lip'];
+
+const EYE_STATES = ['', 'Closed Eyes', 'Half-Closed Eyes', 'Winking', 'Wide Eyes',
+  'Heterochromia', 'Glowing Eyes', 'Heart-Shaped Pupils', 'Spiral Eyes', 'Empty Eyes'];
+
+const RACES = ['', 'Human', 'Elf', 'Dark Elf', 'Angel', 'Demon', 'Vampire', 'Mermaid',
+  'Fairy', 'Succubus', 'Ghost', 'Robot', 'Werewolf', 'Monster Girl', 'Beast Ears'];
+
+const OCCUPATIONS = ['', 'Knight', 'Mage', 'Warrior', 'Archer', 'Assassin', 'Pirate',
+  'Nurse', 'Maid', 'Student', 'Teacher', 'Princess', 'Witch', 'Nun', 'Idol', 'Detective',
+  'Alchemist', 'Bard', 'Dancer', 'Shrine Maiden', 'Cheerleader', 'Chef'];
+
+const HAIRSTYLES = ['', 'Ponytail', 'Twin Tails', 'Braids', 'Bun', 'Bob Cut', 'Pixie Cut',
+  'Long Flowing', 'Short Hair', 'Very Long Hair', 'Messy Hair', 'Hime Cut', 'Side Ponytail',
+  'Drill Hair', 'Ahoge', 'French Braid', 'Bangs', 'Hair Over One Eye', 'Afro', 'Cornrows'];
+
+const HAIR_COLORS = ['', 'Blonde', 'Black', 'Brown', 'White', 'Silver', 'Pink', 'Red',
+  'Blue', 'Green', 'Purple', 'Orange', 'Grey', 'Multicolored', 'Streaked'];
+
+const OUTFITS = ['', 'School Uniform', 'Kimono', 'Dress', 'Casual', 'Formal Suit',
+  'Military Uniform', 'Maid Outfit', 'Swimsuit', 'Bunny Suit', 'Armor', 'Lab Coat',
+  'Hoodie', 'Sportswear', 'Gothic', 'Chinese Dress', 'Wedding Dress', 'Yukata',
+  'Sailor Uniform', 'Nurse Uniform', 'Leotard', 'Jumpsuit'];
+
+const SCENES = ['', 'Beach', 'Forest', 'City Street', 'School', 'Castle', 'Shrine / Temple',
+  'Mountain', 'Underwater', 'Space', 'Ruins', 'Library', 'Café', 'Park', 'Rooftop',
+  'Bedroom', 'Bathroom', 'Office', 'Garden', 'Bridge', 'Cave', 'Train', 'Balcony',
+  'Stadium', 'Palace', 'Alley', 'Waterfall', 'Snow Mountain', 'Night Market'];
+
+const PROPS = ['umbrella', 'sword', 'guitar', 'book', 'camera', 'phone', 'flower',
+  'crown', 'glasses', 'headphones', 'microphone', 'wand', 'hat', 'scarf', 'mask',
+  'fan', 'balloon', 'pillow', 'cup', 'chair'];
+
+const NEG_PRESETS = {
+  'General': 'blurry, low quality, watermark, text, deformed, bad anatomy, ugly, disfigured',
+  'Anime': 'bad anatomy, bad hands, blurry, low quality, worst quality, ugly, deformed',
+  'Photo': 'illustration, cartoon, painting, drawing, blurry, low quality, watermark, text, deformed',
+  'Portrait': 'bad anatomy, bad hands, blurry, low quality, extra fingers, missing fingers, deformed face, ugly'
+};
 
 const PLATFORMS = ['General', 'Midjourney', 'DALL-E', 'Stable Diffusion'];
 
@@ -854,6 +976,10 @@ const PRESETS = {
 const DEFAULTS = {
   subject: '', style: 'Photorealistic', substyle: 'Natural',
   mood: '', lighting: '', timeofday: '', angle: '', framing: '', dof: '',
+  focus: '', perspective: '', lightdir: '', shadow: '', lightsources: [],
+  pose: '', gesture: [], expression: '', mouth: '', eyestate: '',
+  race: '', occupation: '', hairstyle: '', haircolor: '',
+  outfit: '', scene: '', props: [],
   palette: '', temperature: 50, saturation: 60, detail: 3,
   quality: [], effects: [], texture: '', ratio: '1:1',
   artist: '', negative: '', platform: 'General',
@@ -862,7 +988,7 @@ const DEFAULTS = {
   dalleSize: '1024x1024'
 };
 
-const state = { ...DEFAULTS, quality: [], effects: [] };
+const state = { ...DEFAULTS, quality: [], effects: [], lightsources: [], gesture: [], props: [] };
 
 // ═══════════ UNDO / REDO ═══════════
 
@@ -946,7 +1072,7 @@ function initTheme() {
 
 // ═══════════ LOCKS ═══════════
 
-var locks = { subject:false, style:false, mood:false, composition:false, color:false, detail:false, effects:false, output:false };
+var locks = { subject:false, style:false, mood:false, composition:false, color:false, detail:false, effects:false, output:false, pose:false, expression:false, character:false, clothing:false, scene:false };
 
 function toggleLock(key, btn) {
   locks[key] = !locks[key];
@@ -989,11 +1115,15 @@ function randomize() {
   if (!locks.mood) {
     state.lighting = randFrom(LIGHTING);
     state.timeofday = randFrom(TIMEOFDAY);
+    state.lightdir = randFrom(LIGHT_DIRECTION);
+    state.shadow = randFrom(SHADOWS);
   }
   if (!locks.composition) {
     state.angle = randFrom(ANGLES);
     state.framing = randFrom(FRAMINGS);
     state.dof = randFrom(DOFS);
+    state.focus = randFrom(FOCUS);
+    state.perspective = randFrom(PERSPECTIVE);
   }
   if (!locks.color) {
     state.palette = randFrom(PALETTES);
@@ -1009,6 +1139,32 @@ function randomize() {
     var se = EFFECTS.slice().sort(function() { return 0.5 - Math.random(); });
     state.effects = se.slice(0, Math.floor(Math.random() * 4));
     state.texture = randFrom(TEXTURES);
+    var sl = LIGHT_SOURCES.slice().sort(function() { return 0.5 - Math.random(); });
+    state.lightsources = sl.slice(0, Math.floor(Math.random() * 3));
+  }
+  if (!locks.pose) {
+    state.pose = randFrom(POSES);
+    var sg = HAND_GESTURES.slice().sort(function() { return 0.5 - Math.random(); });
+    state.gesture = sg.slice(0, Math.floor(Math.random() * 3));
+  }
+  if (!locks.expression) {
+    state.expression = randFrom(EXPRESSIONS);
+    state.mouth = randFrom(MOUTH_SHAPES);
+    state.eyestate = randFrom(EYE_STATES);
+  }
+  if (!locks.character) {
+    state.race = randFrom(RACES);
+    state.occupation = randFrom(OCCUPATIONS);
+    state.hairstyle = randFrom(HAIRSTYLES);
+    state.haircolor = randFrom(HAIR_COLORS);
+  }
+  if (!locks.clothing) {
+    state.outfit = randFrom(OUTFITS);
+  }
+  if (!locks.scene) {
+    state.scene = randFrom(SCENES);
+    var sp = PROPS.slice().sort(function() { return 0.5 - Math.random(); });
+    state.props = sp.slice(0, Math.floor(Math.random() * 3));
   }
   if (!locks.output) state.ratio = randFrom(RATIOS);
   syncUIFromState();
@@ -1192,11 +1348,28 @@ function init() {
   populateSelect('angle', ANGLES);
   populateSelect('framing', FRAMINGS);
   populateSelect('dof', DOFS);
+  populateSelect('focus', FOCUS);
+  populateSelect('perspective', PERSPECTIVE);
+  populateSelect('lightdir', LIGHT_DIRECTION);
+  populateSelect('shadow', SHADOWS);
   populateSelect('palette', PALETTES);
   populateSelect('texture', TEXTURES);
+  populateSelect('pose', POSES);
+  populateSelect('expression', EXPRESSIONS);
+  populateSelect('mouth', MOUTH_SHAPES);
+  populateSelect('eyestate', EYE_STATES);
+  populateSelect('race', RACES);
+  populateSelect('occupation', OCCUPATIONS);
+  populateSelect('hairstyle', HAIRSTYLES);
+  populateSelect('haircolor', HAIR_COLORS);
+  populateSelect('outfit', OUTFITS);
+  populateSelect('scene', SCENES);
 
   buildChips('quality-chips', QUALITY_MODS, 'quality');
   buildChips('effect-chips', EFFECTS, 'effects');
+  buildChips('lightsource-chips', LIGHT_SOURCES, 'lightsources');
+  buildChips('gesture-chips', HAND_GESTURES, 'gesture');
+  buildChips('props-chips', PROPS, 'props');
   buildChips('ratio-chips', RATIOS, 'ratio', true);
   buildPresetMode();
   buildPresets();
@@ -1214,8 +1387,22 @@ function init() {
   bindInput('angle', 'select');
   bindInput('framing', 'select');
   bindInput('dof', 'select');
+  bindInput('focus', 'select');
+  bindInput('perspective', 'select');
+  bindInput('lightdir', 'select');
+  bindInput('shadow', 'select');
   bindInput('palette', 'select');
   bindInput('texture', 'select');
+  bindInput('pose', 'select');
+  bindInput('expression', 'select');
+  bindInput('mouth', 'select');
+  bindInput('eyestate', 'select');
+  bindInput('race', 'select');
+  bindInput('occupation', 'select');
+  bindInput('hairstyle', 'select');
+  bindInput('haircolor', 'select');
+  bindInput('outfit', 'select');
+  bindInput('scene', 'select');
   bindInput('negative', 'textarea');
 
   bindSlider('temperature', function(v) {
@@ -1388,7 +1575,7 @@ function syncUIFromState() {
   document.getElementById('style').value = state.style;
   populateSubstyles();
   document.getElementById('substyle').value = state.substyle;
-  ['mood', 'lighting', 'timeofday', 'angle', 'framing', 'dof', 'palette', 'texture'].forEach(function(id) {
+  ['mood', 'lighting', 'timeofday', 'lightdir', 'shadow', 'angle', 'framing', 'dof', 'focus', 'perspective', 'palette', 'texture', 'pose', 'expression', 'mouth', 'eyestate', 'race', 'occupation', 'hairstyle', 'haircolor', 'outfit', 'scene'].forEach(function(id) {
     document.getElementById(id).value = state[id];
   });
   ['temperature', 'saturation', 'detail'].forEach(function(id) {
@@ -1397,6 +1584,9 @@ function syncUIFromState() {
   });
   buildChips('quality-chips', QUALITY_MODS, 'quality');
   buildChips('effect-chips', EFFECTS, 'effects');
+  buildChips('lightsource-chips', LIGHT_SOURCES, 'lightsources');
+  buildChips('gesture-chips', HAND_GESTURES, 'gesture');
+  buildChips('props-chips', PROPS, 'props');
   buildChips('ratio-chips', RATIOS, 'ratio', true);
 }
 
@@ -1447,10 +1637,12 @@ function renderPreview() {
     container.appendChild(safeSpan('tag-mood', state.mood.toLowerCase()));
   }
 
-  // Lighting + time
+  // Lighting + time + direction + shadow
   var lightParts = [];
   if (state.lighting) lightParts.push(state.lighting.toLowerCase() + ' lighting');
   if (state.timeofday) lightParts.push(state.timeofday.toLowerCase());
+  if (state.lightdir) lightParts.push(state.lightdir.toLowerCase());
+  if (state.shadow) lightParts.push(state.shadow.toLowerCase());
   if (lightParts.length) {
     container.appendChild(safeSep());
     container.appendChild(safeSpan('tag-lighting', lightParts.join(', ')));
@@ -1461,6 +1653,8 @@ function renderPreview() {
   if (state.angle) compParts.push(state.angle.toLowerCase());
   if (state.framing) compParts.push(state.framing.toLowerCase());
   if (state.dof) compParts.push(state.dof.toLowerCase());
+  if (state.focus) compParts.push(state.focus.toLowerCase());
+  if (state.perspective) compParts.push(state.perspective.toLowerCase());
   if (compParts.length) {
     container.appendChild(safeSep());
     container.appendChild(safeSpan('tag-composition', compParts.join(', ')));
@@ -1488,6 +1682,57 @@ function renderPreview() {
   if (state.texture) {
     container.appendChild(safeSep());
     container.appendChild(safeSpan('tag-detail', state.texture.toLowerCase()));
+  }
+
+  // Light sources
+  if (state.lightsources.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-lighting', state.lightsources.join(', ')));
+  }
+
+  // Pose & gesture
+  var poseParts = [];
+  if (state.pose) poseParts.push(state.pose.toLowerCase());
+  state.gesture.forEach(function(g) { poseParts.push(g); });
+  if (poseParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-composition', poseParts.join(', ')));
+  }
+
+  // Expression
+  var exprParts = [];
+  if (state.expression) exprParts.push(state.expression.toLowerCase());
+  if (state.mouth) exprParts.push(state.mouth.toLowerCase());
+  if (state.eyestate) exprParts.push(state.eyestate.toLowerCase());
+  if (exprParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-mood', exprParts.join(', ')));
+  }
+
+  // Character
+  var charParts = [];
+  if (state.race) charParts.push(state.race.toLowerCase());
+  if (state.occupation) charParts.push(state.occupation.toLowerCase());
+  if (state.hairstyle) charParts.push(state.hairstyle.toLowerCase());
+  if (state.haircolor) charParts.push(state.haircolor.toLowerCase() + ' hair');
+  if (charParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-subject', charParts.join(', ')));
+  }
+
+  // Clothing
+  if (state.outfit) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-style', state.outfit.toLowerCase()));
+  }
+
+  // Scene & props
+  var sceneParts = [];
+  if (state.scene) sceneParts.push(state.scene.toLowerCase());
+  state.props.forEach(function(p) { sceneParts.push(p); });
+  if (sceneParts.length) {
+    container.appendChild(safeSep());
+    container.appendChild(safeSpan('tag-detail', sceneParts.join(', ')));
   }
 
   // Quality
@@ -1548,10 +1793,14 @@ function buildPrompt() {
   if (state.mood) parts.push(state.mood.toLowerCase() + ' atmosphere');
   if (state.lighting) parts.push(state.lighting.toLowerCase() + ' lighting');
   if (state.timeofday) parts.push(state.timeofday.toLowerCase());
+  if (state.lightdir) parts.push(state.lightdir.toLowerCase());
+  if (state.shadow) parts.push(state.shadow.toLowerCase());
 
   if (state.angle) parts.push(state.angle.toLowerCase());
   if (state.framing) parts.push(state.framing.toLowerCase());
   if (state.dof) parts.push(state.dof.toLowerCase() + ' depth of field');
+  if (state.focus) parts.push(state.focus.toLowerCase());
+  if (state.perspective) parts.push(state.perspective.toLowerCase());
 
   if (state.palette) parts.push(state.palette.toLowerCase() + ' color palette');
   if (state.temperature < 35) parts.push('cool tones');
@@ -1561,6 +1810,20 @@ function buildPrompt() {
 
   state.effects.forEach(function(e) { parts.push(e); });
   if (state.texture) parts.push(state.texture.toLowerCase());
+  state.lightsources.forEach(function(ls) { parts.push(ls); });
+
+  if (state.pose) parts.push(state.pose.toLowerCase());
+  state.gesture.forEach(function(g) { parts.push(g); });
+  if (state.expression) parts.push(state.expression.toLowerCase());
+  if (state.mouth) parts.push(state.mouth.toLowerCase());
+  if (state.eyestate) parts.push(state.eyestate.toLowerCase());
+  if (state.race) parts.push(state.race.toLowerCase());
+  if (state.occupation) parts.push(state.occupation.toLowerCase());
+  if (state.hairstyle) parts.push(state.hairstyle.toLowerCase() + ' hair');
+  if (state.haircolor) parts.push(state.haircolor.toLowerCase() + ' hair');
+  if (state.outfit) parts.push(state.outfit.toLowerCase());
+  if (state.scene) parts.push(state.scene.toLowerCase());
+  state.props.forEach(function(p) { parts.push(p); });
 
   var detailLabels = { 1: 'minimal detail', 2: 'simple', 4: 'highly detailed', 5: 'extremely detailed, intricate' };
   if (detailLabels[state.detail]) parts.push(detailLabels[state.detail]);
@@ -1815,6 +2078,28 @@ var I18N = {
   'camera-angle': { en: 'Camera Angle', zh: '鏡頭角度' },
   'framing': { en: 'Framing', zh: '取景方式' },
   'depth-of-field': { en: 'Depth of Field', zh: '景深' },
+  'focus': { en: 'Focus', zh: '聚焦' },
+  'perspective': { en: 'Perspective', zh: '透視' },
+  'light-direction': { en: 'Light Direction', zh: '光影方向' },
+  'shadow': { en: 'Shadow', zh: '陰影' },
+  'light-sources': { en: 'Light Sources', zh: '光源' },
+  'pose-action': { en: 'Pose & Action', zh: '姿勢與動作' },
+  'base-pose': { en: 'Base Pose', zh: '基本姿勢' },
+  'hand-gesture': { en: 'Hand Gesture', zh: '手勢' },
+  'expression-section': { en: 'Expression', zh: '表情' },
+  'expression': { en: 'Expression', zh: '表情' },
+  'mouth-shape': { en: 'Mouth', zh: '嘴型' },
+  'eye-state': { en: 'Eyes', zh: '眼神' },
+  'character-section': { en: 'Character', zh: '角色設定' },
+  'race': { en: 'Race / Species', zh: '種族' },
+  'occupation': { en: 'Occupation', zh: '職業' },
+  'hairstyle': { en: 'Hairstyle', zh: '髮型' },
+  'hair-color': { en: 'Hair Color', zh: '髮色' },
+  'clothing-section': { en: 'Clothing', zh: '服裝' },
+  'outfit': { en: 'Outfit', zh: '服裝類型' },
+  'scene-section': { en: 'Scene', zh: '場景' },
+  'location': { en: 'Location', zh: '場景地點' },
+  'scene-props': { en: 'Props', zh: '道具' },
   'color': { en: 'Color', zh: '色彩' },
   'color-palette': { en: 'Color Palette', zh: '色板' },
   'color-temp': { en: 'Color Temperature', zh: '色溫' },
@@ -1949,6 +2234,10 @@ var I18N = {
   'opt-Overcast Flat': { en: 'Overcast Flat', zh: '陰天平光' },
   'opt-Chiaroscuro': { en: 'Chiaroscuro', zh: '明暗對比法' },
   'opt-Under Dramatic Clouds': { en: 'Under Dramatic Clouds', zh: '戲劇性雲層下' },
+  'opt-Sunlight': { en: 'Sunlight', zh: '陽光' },
+  'opt-Sunbeam': { en: 'Sunbeam', zh: '陽光線' },
+  'opt-Spotlight': { en: 'Spotlight', zh: '聚光燈' },
+  'opt-Stage Lights': { en: 'Stage Lights', zh: '舞台燈光' },
 
   // ── Time of day ──
   'opt-Dawn': { en: 'Dawn', zh: '黎明' },
@@ -1968,6 +2257,12 @@ var I18N = {
   'opt-Dutch Angle / Tilted': { en: 'Dutch Angle / Tilted', zh: '荷蘭角（傾斜）' },
   'opt-Over-the-Shoulder': { en: 'Over-the-Shoulder', zh: '過肩鏡頭' },
   'opt-First Person POV': { en: 'First Person POV', zh: '第一人稱視角' },
+  'opt-From Behind': { en: 'From Behind', zh: '背面' },
+  'opt-From Above': { en: 'From Above', zh: '從上方' },
+  'opt-From Below': { en: 'From Below', zh: '從下方' },
+  'opt-Side View': { en: 'Side View', zh: '側面' },
+  'opt-Aerial View': { en: 'Aerial View', zh: '空中俯瞰' },
+  'opt-Selfie': { en: 'Selfie', zh: '自拍' },
 
   // ── Framing ──
   'opt-Extreme Close-Up': { en: 'Extreme Close-Up', zh: '超特寫' },
@@ -1979,6 +2274,11 @@ var I18N = {
   'opt-Symmetrical / Centered': { en: 'Symmetrical / Centered', zh: '對稱置中' },
   'opt-Rule of Thirds': { en: 'Rule of Thirds', zh: '三分法構圖' },
   'opt-Frame Within Frame': { en: 'Frame Within Frame', zh: '框中框' },
+  'opt-Portrait': { en: 'Portrait', zh: '肖像（臉到肩）' },
+  'opt-Upper Body': { en: 'Upper Body', zh: '上半身' },
+  'opt-Cowboy Shot': { en: 'Cowboy Shot', zh: '牛仔特寫（臉到大腿）' },
+  'opt-Long Shot': { en: 'Long Shot', zh: '遠景' },
+  'opt-Establishing Shot': { en: 'Establishing Shot', zh: '定場鏡頭' },
 
   // ── Depth of field ──
   'opt-Shallow (Bokeh)': { en: 'Shallow (Bokeh)', zh: '淺景深（散景）' },
@@ -2009,6 +2309,269 @@ var I18N = {
   'opt-Glitch / Digital Artifacts': { en: 'Glitch / Digital Artifacts', zh: '故障效果' },
   'opt-Fabric / Textile': { en: 'Fabric / Textile', zh: '織物材質' },
 
+  // ── Focus options ──
+  'opt-Solo Focus': { en: 'Solo Focus', zh: '單人聚焦' },
+  'opt-Face Focus': { en: 'Face Focus', zh: '臉部聚焦' },
+  'opt-Eye Focus': { en: 'Eye Focus', zh: '眼睛聚焦' },
+
+  // ── Perspective options ──
+  'opt-Atmospheric Perspective': { en: 'Atmospheric Perspective', zh: '大氣透視' },
+  'opt-Fisheye': { en: 'Fisheye', zh: '魚眼' },
+  'opt-Panorama': { en: 'Panorama', zh: '全景廣角' },
+  'opt-Three-Point Perspective': { en: 'Three-Point Perspective', zh: '三點透視' },
+  'opt-Vanishing Point': { en: 'Vanishing Point', zh: '消失點' },
+  'opt-Foreshortening': { en: 'Foreshortening', zh: '前縮透視法' },
+
+  // ── Light Direction options ──
+  'opt-Frontlight': { en: 'Frontlight', zh: '正面光' },
+  'opt-Sidelight': { en: 'Sidelight', zh: '側光' },
+  'opt-Backlight': { en: 'Backlight', zh: '背光' },
+  'opt-Underlight': { en: 'Underlight', zh: '底光' },
+  'opt-Rim Light': { en: 'Rim Light', zh: '強邊緣光' },
+
+  // ── Shadow options ──
+  'opt-Dark': { en: 'Dark', zh: '黑暗' },
+  'opt-Dim Lighting': { en: 'Dim Lighting', zh: '昏暗照明' },
+  'opt-Dappled Sunlight': { en: 'Dappled Sunlight', zh: '斑駁的陽光' },
+  'opt-Drop Shadow': { en: 'Drop Shadow', zh: '投影陰影' },
+  'opt-Tree Shade': { en: 'Tree Shade', zh: '樹蔭' },
+  'opt-Window Shadow': { en: 'Window Shadow', zh: '窗影' },
+
+  // ── Pose options ──
+  'opt-Standing': { en: 'Standing', zh: '站立' },
+  'opt-Sitting': { en: 'Sitting', zh: '坐下' },
+  'opt-Kneeling': { en: 'Kneeling', zh: '跪' },
+  'opt-Squatting': { en: 'Squatting', zh: '蹲' },
+  'opt-Lying Down': { en: 'Lying Down', zh: '躺' },
+  'opt-Crouching': { en: 'Crouching', zh: '蜷縮' },
+  'opt-Leaning': { en: 'Leaning', zh: '倚靠' },
+  'opt-Floating': { en: 'Floating', zh: '漂浮' },
+  'opt-Walking': { en: 'Walking', zh: '行走' },
+  'opt-Running': { en: 'Running', zh: '奔跑' },
+  'opt-Jumping': { en: 'Jumping', zh: '跳躍' },
+  'opt-Flying': { en: 'Flying', zh: '飛行' },
+  'opt-Falling': { en: 'Falling', zh: '墜落' },
+  'opt-Crawling': { en: 'Crawling', zh: '爬行' },
+  'opt-Swimming': { en: 'Swimming', zh: '游泳' },
+  'opt-All Fours': { en: 'All Fours', zh: '四肢著地' },
+  'opt-Seiza': { en: 'Seiza', zh: '正坐' },
+  'opt-Lotus Position': { en: 'Lotus Position', zh: '蓮花坐' },
+  'opt-Stretching': { en: 'Stretching', zh: '伸展' },
+
+  // ── Hand gesture chips ──
+  'chip-peace sign': { en: 'peace sign', zh: 'V字手勢' },
+  'chip-thumbs up': { en: 'thumbs up', zh: '比讚' },
+  'chip-finger heart': { en: 'finger heart', zh: '手指愛心' },
+  'chip-pointing': { en: 'pointing', zh: '指著' },
+  'chip-waving': { en: 'waving', zh: '招手' },
+  'chip-salute': { en: 'salute', zh: '敬禮' },
+  'chip-fist': { en: 'fist', zh: '握拳' },
+  'chip-open hand': { en: 'open hand', zh: '張開手' },
+  'chip-ok sign': { en: 'ok sign', zh: 'OK手勢' },
+  'chip-heart hands': { en: 'heart hands', zh: '愛心手勢' },
+  'chip-cat pose': { en: 'cat pose', zh: '貓手勢' },
+  'chip-finger gun': { en: 'finger gun', zh: '手槍手勢' },
+
+  // ── Expression options ──
+  'opt-Happy': { en: 'Happy', zh: '快樂' },
+  'opt-Excited': { en: 'Excited', zh: '興奮' },
+  'opt-Smiling': { en: 'Smiling', zh: '微笑' },
+  'opt-Grinning': { en: 'Grinning', zh: '露齒笑' },
+  'opt-Sad': { en: 'Sad', zh: '悲傷' },
+  'opt-Crying': { en: 'Crying', zh: '哭泣' },
+  'opt-Angry': { en: 'Angry', zh: '生氣' },
+  'opt-Annoyed': { en: 'Annoyed', zh: '煩惱' },
+  'opt-Surprised': { en: 'Surprised', zh: '驚訝' },
+  'opt-Shocked': { en: 'Shocked', zh: '驚恐' },
+  'opt-Scared': { en: 'Scared', zh: '害怕' },
+  'opt-Embarrassed': { en: 'Embarrassed', zh: '尷尬' },
+  'opt-Shy': { en: 'Shy', zh: '害羞' },
+  'opt-Bored': { en: 'Bored', zh: '無聊' },
+  'opt-Sleepy': { en: 'Sleepy', zh: '睏' },
+  'opt-Expressionless': { en: 'Expressionless', zh: '無表情' },
+  'opt-Determined': { en: 'Determined', zh: '堅定' },
+  'opt-Flustered': { en: 'Flustered', zh: '慌亂' },
+  'opt-Nervous': { en: 'Nervous', zh: '緊張' },
+  'opt-Disgusted': { en: 'Disgusted', zh: '厭惡' },
+  'opt-Drunk': { en: 'Drunk', zh: '酒醉' },
+  'opt-Smirk': { en: 'Smirk', zh: '冷笑' },
+  'opt-Evil Smile': { en: 'Evil Smile', zh: '邪惡微笑' },
+  'opt-Crazy': { en: 'Crazy', zh: '瘋狂' },
+
+  // ── Mouth options ──
+  'opt-Smile': { en: 'Smile', zh: '微笑' },
+  'opt-Grin': { en: 'Grin', zh: '露齒笑' },
+  'opt-Pout': { en: 'Pout', zh: '噘嘴' },
+  'opt-Open Mouth': { en: 'Open Mouth', zh: '張嘴' },
+  'opt-Tongue Out': { en: 'Tongue Out', zh: '吐舌' },
+  'opt-Closed Mouth': { en: 'Closed Mouth', zh: '閉嘴' },
+  'opt-Frown': { en: 'Frown', zh: '皺眉' },
+  'opt-Parted Lips': { en: 'Parted Lips', zh: '微開嘴唇' },
+  'opt-Drooling': { en: 'Drooling', zh: '流口水' },
+  'opt-Biting Lip': { en: 'Biting Lip', zh: '咬唇' },
+
+  // ── Eye state options ──
+  'opt-Closed Eyes': { en: 'Closed Eyes', zh: '閉眼' },
+  'opt-Half-Closed Eyes': { en: 'Half-Closed Eyes', zh: '半閉眼' },
+  'opt-Winking': { en: 'Winking', zh: '眨眼' },
+  'opt-Wide Eyes': { en: 'Wide Eyes', zh: '睜大眼' },
+  'opt-Heterochromia': { en: 'Heterochromia', zh: '異色瞳' },
+  'opt-Glowing Eyes': { en: 'Glowing Eyes', zh: '發光眼' },
+  'opt-Heart-Shaped Pupils': { en: 'Heart-Shaped Pupils', zh: '愛心瞳孔' },
+  'opt-Spiral Eyes': { en: 'Spiral Eyes', zh: '螺旋眼' },
+  'opt-Empty Eyes': { en: 'Empty Eyes', zh: '空洞眼神' },
+
+  // ── Race options ──
+  'opt-Human': { en: 'Human', zh: '人類' },
+  'opt-Elf': { en: 'Elf', zh: '精靈' },
+  'opt-Dark Elf': { en: 'Dark Elf', zh: '黑暗精靈' },
+  'opt-Angel': { en: 'Angel', zh: '天使' },
+  'opt-Demon': { en: 'Demon', zh: '惡魔' },
+  'opt-Vampire': { en: 'Vampire', zh: '吸血鬼' },
+  'opt-Mermaid': { en: 'Mermaid', zh: '人魚' },
+  'opt-Fairy': { en: 'Fairy', zh: '妖精' },
+  'opt-Succubus': { en: 'Succubus', zh: '魅魔' },
+  'opt-Ghost': { en: 'Ghost', zh: '幽靈' },
+  'opt-Robot': { en: 'Robot', zh: '機器人' },
+  'opt-Werewolf': { en: 'Werewolf', zh: '狼人' },
+  'opt-Monster Girl': { en: 'Monster Girl', zh: '人外娘' },
+  'opt-Beast Ears': { en: 'Beast Ears', zh: '獸耳' },
+
+  // ── Occupation options ──
+  'opt-Knight': { en: 'Knight', zh: '騎士' },
+  'opt-Mage': { en: 'Mage', zh: '法師' },
+  'opt-Warrior': { en: 'Warrior', zh: '戰士' },
+  'opt-Archer': { en: 'Archer', zh: '弓箭手' },
+  'opt-Assassin': { en: 'Assassin', zh: '暗殺者' },
+  'opt-Pirate': { en: 'Pirate', zh: '海盜' },
+  'opt-Nurse': { en: 'Nurse', zh: '護士' },
+  'opt-Maid': { en: 'Maid', zh: '女僕' },
+  'opt-Student': { en: 'Student', zh: '學生' },
+  'opt-Teacher': { en: 'Teacher', zh: '教師' },
+  'opt-Princess': { en: 'Princess', zh: '公主' },
+  'opt-Witch': { en: 'Witch', zh: '女巫' },
+  'opt-Nun': { en: 'Nun', zh: '修女' },
+  'opt-Idol': { en: 'Idol', zh: '偶像' },
+  'opt-Detective': { en: 'Detective', zh: '偵探' },
+  'opt-Alchemist': { en: 'Alchemist', zh: '鍊金術士' },
+  'opt-Bard': { en: 'Bard', zh: '詩人' },
+  'opt-Dancer': { en: 'Dancer', zh: '舞者' },
+  'opt-Shrine Maiden': { en: 'Shrine Maiden', zh: '巫女' },
+  'opt-Cheerleader': { en: 'Cheerleader', zh: '啦啦隊' },
+  'opt-Chef': { en: 'Chef', zh: '廚師' },
+
+  // ── Hairstyle options ──
+  'opt-Ponytail': { en: 'Ponytail', zh: '馬尾' },
+  'opt-Twin Tails': { en: 'Twin Tails', zh: '雙馬尾' },
+  'opt-Braids': { en: 'Braids', zh: '辮子' },
+  'opt-Bun': { en: 'Bun', zh: '包子頭' },
+  'opt-Bob Cut': { en: 'Bob Cut', zh: '妹妹頭' },
+  'opt-Pixie Cut': { en: 'Pixie Cut', zh: '精靈短髮' },
+  'opt-Long Flowing': { en: 'Long Flowing', zh: '飄逸長髮' },
+  'opt-Short Hair': { en: 'Short Hair', zh: '短髮' },
+  'opt-Very Long Hair': { en: 'Very Long Hair', zh: '超長髮' },
+  'opt-Messy Hair': { en: 'Messy Hair', zh: '凌亂髮' },
+  'opt-Hime Cut': { en: 'Hime Cut', zh: '姬髮式' },
+  'opt-Side Ponytail': { en: 'Side Ponytail', zh: '側馬尾' },
+  'opt-Drill Hair': { en: 'Drill Hair', zh: '鑽頭髮' },
+  'opt-Ahoge': { en: 'Ahoge', zh: '呆毛' },
+  'opt-French Braid': { en: 'French Braid', zh: '法式辮子' },
+  'opt-Bangs': { en: 'Bangs', zh: '瀏海' },
+  'opt-Hair Over One Eye': { en: 'Hair Over One Eye', zh: '遮單眼' },
+  'opt-Afro': { en: 'Afro', zh: '爆炸頭' },
+  'opt-Cornrows': { en: 'Cornrows', zh: '玉米辮' },
+
+  // ── Hair color options ──
+  'opt-Blonde': { en: 'Blonde', zh: '金髮' },
+  'opt-Black': { en: 'Black', zh: '黑髮' },
+  'opt-Brown': { en: 'Brown', zh: '褐髮' },
+  'opt-White': { en: 'White', zh: '白髮' },
+  'opt-Silver': { en: 'Silver', zh: '銀髮' },
+  'opt-Pink': { en: 'Pink', zh: '粉髮' },
+  'opt-Red': { en: 'Red', zh: '紅髮' },
+  'opt-Blue': { en: 'Blue', zh: '藍髮' },
+  'opt-Green': { en: 'Green', zh: '綠髮' },
+  'opt-Purple': { en: 'Purple', zh: '紫髮' },
+  'opt-Orange': { en: 'Orange', zh: '橘髮' },
+  'opt-Grey': { en: 'Grey', zh: '灰髮' },
+  'opt-Multicolored': { en: 'Multicolored', zh: '多彩' },
+  'opt-Streaked': { en: 'Streaked', zh: '挑染' },
+
+  // ── Outfit options ──
+  'opt-School Uniform': { en: 'School Uniform', zh: '校服' },
+  'opt-Kimono': { en: 'Kimono', zh: '和服' },
+  'opt-Dress': { en: 'Dress', zh: '洋裝' },
+  'opt-Casual': { en: 'Casual', zh: '休閒裝' },
+  'opt-Formal Suit': { en: 'Formal Suit', zh: '西裝' },
+  'opt-Military Uniform': { en: 'Military Uniform', zh: '軍服' },
+  'opt-Maid Outfit': { en: 'Maid Outfit', zh: '女僕裝' },
+  'opt-Swimsuit': { en: 'Swimsuit', zh: '泳裝' },
+  'opt-Bunny Suit': { en: 'Bunny Suit', zh: '兔女郎' },
+  'opt-Armor': { en: 'Armor', zh: '盔甲' },
+  'opt-Lab Coat': { en: 'Lab Coat', zh: '白袍' },
+  'opt-Hoodie': { en: 'Hoodie', zh: '帽T' },
+  'opt-Sportswear': { en: 'Sportswear', zh: '運動服' },
+  'opt-Gothic': { en: 'Gothic', zh: '哥德風' },
+  'opt-Chinese Dress': { en: 'Chinese Dress', zh: '旗袍' },
+  'opt-Wedding Dress': { en: 'Wedding Dress', zh: '婚紗' },
+  'opt-Yukata': { en: 'Yukata', zh: '浴衣' },
+  'opt-Sailor Uniform': { en: 'Sailor Uniform', zh: '水手服' },
+  'opt-Nurse Uniform': { en: 'Nurse Uniform', zh: '護士裝' },
+  'opt-Leotard': { en: 'Leotard', zh: '緊身衣' },
+  'opt-Jumpsuit': { en: 'Jumpsuit', zh: '連身褲' },
+
+  // ── Scene options ──
+  'opt-Beach': { en: 'Beach', zh: '海灘' },
+  'opt-Forest': { en: 'Forest', zh: '森林' },
+  'opt-City Street': { en: 'City Street', zh: '城市街景' },
+  'opt-School': { en: 'School', zh: '學校' },
+  'opt-Castle': { en: 'Castle', zh: '城堡' },
+  'opt-Shrine / Temple': { en: 'Shrine / Temple', zh: '神社 / 寺廟' },
+  'opt-Mountain': { en: 'Mountain', zh: '山景' },
+  'opt-Underwater': { en: 'Underwater', zh: '水下' },
+  'opt-Space': { en: 'Space', zh: '太空' },
+  'opt-Ruins': { en: 'Ruins', zh: '廢墟' },
+  'opt-Library': { en: 'Library', zh: '圖書館' },
+  'opt-Café': { en: 'Café', zh: '咖啡廳' },
+  'opt-Park': { en: 'Park', zh: '公園' },
+  'opt-Rooftop': { en: 'Rooftop', zh: '天台' },
+  'opt-Bedroom': { en: 'Bedroom', zh: '臥室' },
+  'opt-Bathroom': { en: 'Bathroom', zh: '浴室' },
+  'opt-Office': { en: 'Office', zh: '辦公室' },
+  'opt-Garden': { en: 'Garden', zh: '花園' },
+  'opt-Bridge': { en: 'Bridge', zh: '橋' },
+  'opt-Cave': { en: 'Cave', zh: '洞穴' },
+  'opt-Train': { en: 'Train', zh: '火車' },
+  'opt-Balcony': { en: 'Balcony', zh: '陽台' },
+  'opt-Stadium': { en: 'Stadium', zh: '體育場' },
+  'opt-Palace': { en: 'Palace', zh: '皇宮' },
+  'opt-Alley': { en: 'Alley', zh: '小巷' },
+  'opt-Waterfall': { en: 'Waterfall', zh: '瀑布' },
+  'opt-Snow Mountain': { en: 'Snow Mountain', zh: '雪山' },
+  'opt-Night Market': { en: 'Night Market', zh: '夜市' },
+
+  // ── Props chips ──
+  'chip-umbrella': { en: 'umbrella', zh: '雨傘' },
+  'chip-sword': { en: 'sword', zh: '劍' },
+  'chip-guitar': { en: 'guitar', zh: '吉他' },
+  'chip-book': { en: 'book', zh: '書' },
+  'chip-camera': { en: 'camera', zh: '相機' },
+  'chip-phone': { en: 'phone', zh: '手機' },
+  'chip-flower': { en: 'flower', zh: '花' },
+  'chip-crown': { en: 'crown', zh: '皇冠' },
+  'chip-glasses': { en: 'glasses', zh: '眼鏡' },
+  'chip-headphones': { en: 'headphones', zh: '耳機' },
+  'chip-microphone': { en: 'microphone', zh: '麥克風' },
+  'chip-wand': { en: 'wand', zh: '魔杖' },
+  'chip-hat': { en: 'hat', zh: '帽子' },
+  'chip-scarf': { en: 'scarf', zh: '圍巾' },
+  'chip-mask': { en: 'mask', zh: '面具' },
+  'chip-fan': { en: 'fan', zh: '扇子' },
+  'chip-balloon': { en: 'balloon', zh: '氣球' },
+  'chip-pillow': { en: 'pillow', zh: '枕頭' },
+  'chip-cup': { en: 'cup', zh: '杯子' },
+  'chip-chair': { en: 'chair', zh: '椅子' },
+
   // ── Quality modifier chips ──
   'chip-masterpiece': { en: 'masterpiece', zh: '傑作' },
   'chip-best quality': { en: 'best quality', zh: '最佳品質' },
@@ -2036,6 +2599,26 @@ var I18N = {
   'chip-glitch effect': { en: 'glitch effect', zh: '故障效果' },
   'chip-sparkles': { en: 'sparkles', zh: '閃光' },
   'chip-smoke': { en: 'smoke', zh: '煙霧' },
+  'chip-caustics': { en: 'caustics', zh: '光線折射' },
+  'chip-dispersion': { en: 'dispersion', zh: '色散' },
+  'chip-crack of light': { en: 'crack of light', zh: '光裂' },
+
+  // ── Light source chips ──
+  'chip-ring light': { en: 'ring light', zh: '環形燈' },
+  'chip-lantern': { en: 'lantern', zh: '燈籠' },
+  'chip-paper lantern': { en: 'paper lantern', zh: '紙燈籠' },
+  'chip-oil lamp': { en: 'oil lamp', zh: '油燈' },
+  'chip-desk lamp': { en: 'desk lamp', zh: '書桌燈' },
+  'chip-wall lamp': { en: 'wall lamp', zh: '壁燈' },
+  'chip-ceiling light': { en: 'ceiling light', zh: '吊燈' },
+  'chip-chandelier': { en: 'chandelier', zh: '水晶燈' },
+  'chip-glowstick': { en: 'glowstick', zh: '發光棒' },
+  'chip-flashlight': { en: 'flashlight', zh: '手電筒' },
+  'chip-fireworks': { en: 'fireworks', zh: '煙火' },
+  'chip-fire': { en: 'fire', zh: '火焰' },
+  'chip-embers': { en: 'embers', zh: '餘燼' },
+  'chip-torch': { en: 'torch', zh: '火把' },
+  'chip-neon sign': { en: 'neon sign', zh: '霓虹燈' },
 
   // ── History ──
   'history': { en: 'History', zh: '歷史紀錄' },
@@ -2109,8 +2692,22 @@ function applyLang() {
   populateSelect('angle', ANGLES); document.getElementById('angle').value = state.angle;
   populateSelect('framing', FRAMINGS); document.getElementById('framing').value = state.framing;
   populateSelect('dof', DOFS); document.getElementById('dof').value = state.dof;
+  populateSelect('focus', FOCUS); document.getElementById('focus').value = state.focus;
+  populateSelect('perspective', PERSPECTIVE); document.getElementById('perspective').value = state.perspective;
+  populateSelect('lightdir', LIGHT_DIRECTION); document.getElementById('lightdir').value = state.lightdir;
+  populateSelect('shadow', SHADOWS); document.getElementById('shadow').value = state.shadow;
   populateSelect('palette', PALETTES); document.getElementById('palette').value = state.palette;
   populateSelect('texture', TEXTURES); document.getElementById('texture').value = state.texture;
+  populateSelect('pose', POSES); document.getElementById('pose').value = state.pose;
+  populateSelect('expression', EXPRESSIONS); document.getElementById('expression').value = state.expression;
+  populateSelect('mouth', MOUTH_SHAPES); document.getElementById('mouth').value = state.mouth;
+  populateSelect('eyestate', EYE_STATES); document.getElementById('eyestate').value = state.eyestate;
+  populateSelect('race', RACES); document.getElementById('race').value = state.race;
+  populateSelect('occupation', OCCUPATIONS); document.getElementById('occupation').value = state.occupation;
+  populateSelect('hairstyle', HAIRSTYLES); document.getElementById('hairstyle').value = state.hairstyle;
+  populateSelect('haircolor', HAIR_COLORS); document.getElementById('haircolor').value = state.haircolor;
+  populateSelect('outfit', OUTFITS); document.getElementById('outfit').value = state.outfit;
+  populateSelect('scene', SCENES); document.getElementById('scene').value = state.scene;
 
   // Lang toggle button
   document.getElementById('lang-toggle').textContent = currentLang === 'en' ? '中文' : 'EN';
@@ -2118,6 +2715,9 @@ function applyLang() {
   // Rebuild dynamic elements
   buildChips('quality-chips', QUALITY_MODS, 'quality');
   buildChips('effect-chips', EFFECTS, 'effects');
+  buildChips('lightsource-chips', LIGHT_SOURCES, 'lightsources');
+  buildChips('gesture-chips', HAND_GESTURES, 'gesture');
+  buildChips('props-chips', PROPS, 'props');
   buildChips('ratio-chips', RATIOS, 'ratio', true);
   buildPresetMode();
   buildPresets();
